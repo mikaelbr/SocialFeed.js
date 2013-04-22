@@ -377,7 +377,7 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"util":1,"./api":4,"./controller":5,"./basemodule":6,"./utils":7,"./modules/disqus":8,"./modules/github":9,"./modules/delicious":10}],11:[function(require,module,exports){
+},{"util":1,"./api":4,"./controller":5,"./basemodule":6,"./utils":7,"./modules/github":8,"./modules/disqus":9,"./modules/delicious":10}],11:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -651,37 +651,7 @@ module.exports.timesince = function (date) {
   }
   return Math.floor(seconds) + " seconds ago";
 };
-},{}],4:[function(require,module,exports){
-var vent = require('./events')
-  ;
-
-var API = module.exports = function (controller) {
-};
-
-API.prototype = {
-
-  start: function () {
-    this.c.emit('start');
-    return this;
-  }
-
-  , reload: function () {
-    this.c.emit('reload');
-    return this;
-  }
-
-  , addModule: function (module) {
-    this.c.emit('addModule', module);
-    return this;
-  }
-
-  , on: function (eventType, cb) {
-    this.c.on(eventType, cb);
-    return this;
-  }
-
-};
-},{"./events":12}],5:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   , inherits = require('util').inherits
@@ -872,43 +842,37 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-},{"events":2,"util":1,"./utils":7}],8:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
+},{"events":2,"util":1,"./utils":7}],4:[function(require,module,exports){
+var vent = require('./events')
   ;
 
-module.exports = SocialBase.extend({
+var API = module.exports = function (controller) {
+};
 
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
+API.prototype = {
+
+  start: function () {
+    this.c.emit('start');
+    return this;
   }
 
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  , reload: function () {
+    this.c.emit('reload');
+    return this;
   }
 
-  , parse: function (resp) {
-    return resp.response;
+  , addModule: function (module) {
+    this.c.emit('addModule', module);
+    return this;
   }
 
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
+  , on: function (eventType, cb) {
+    this.c.on(eventType, cb);
+    return this;
   }
 
-  , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
-  }
-
-});
-},{"../basemodule":6,"../resources":13}],9:[function(require,module,exports){
+};
+},{"./events":12}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -1009,7 +973,43 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":6,"../resources":13,"../utils":7}],10:[function(require,module,exports){
+},{"../basemodule":6,"../resources":13,"../utils":7}],9:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  ;
+
+module.exports = SocialBase.extend({
+
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
+  }
+
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  }
+
+  , parse: function (resp) {
+    return resp.response;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
+  }
+
+  , render: function (item) {
+    return templateHtml
+                      .replace('{{author.profileUrl}}', item.author.profileUrl)
+                      .replace('{{author.name}}', item.author.name)
+                      .replace('{{createdAt}}', item.createdAt)
+                      .replace('{{time_since}}', _.timesince(item.createdAt))
+                      .replace('{{message}}', item.message);
+                   
+    return $html;
+  }
+
+});
+},{"../basemodule":6,"../resources":13}],10:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   ;
@@ -1043,15 +1043,15 @@ module.exports = new EventEmitter();
 /* Do not alter. Auto generated file */
 
 module.exports = {
-	"delicious": "<div class=\"socialfeed-item socialfeed-delicious\">\n  <header>\n    <h2><a href=\"{{u}}\">{{d}}</a></h2>\n    <time datetime=\"{{dt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{n}}\n  </div>\n</div>",
-	"disqus": "<div class=\"socialfeed-item socialfeed-disqus\">\n  <header>\n    <h2><a href=\"{{author.profileUrl}}\">{{author.name}}</a></h2>\n    <time datetime=\"{{createdAt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{message}}\n  </div>\n</div>",
-	"github_create": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-create\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> created repository <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_createbranch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-createbranch\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      created branch <a href=\"{{branchurl}}\">{{branchname}}</a> \n      at <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_fork": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-fork\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      forked repository <a href=\"{{repourl}}\">{{reponame}}</a>\n      to <a href=\"{{forkeeurl}}\">{{forkeename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_issue": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-issue\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} issue <a href=\"{{issueurl}}\">{{issuename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
-	"github_pullrequest": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-pull-request\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} pull request <a href=\"{{pullrequesturl}}\">{{pullrequestname}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
-	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      pushed to <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{{commiturl}}\">{{commit}}</a>\n      <span>{{commit_message}}</span>\n    </li>\n  </ul>\n</div>",
-	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <header>\n    <h2><a href=\"{{profileUrl}}\">{{username}}</a> starred <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
+	"delicious": "<div class=\"socialfeed-item socialfeed-delicious\">\n  <i class=\"socialfeed-icon icon-link\"></i>\n  <header>\n    <h2><a href=\"{{u}}\">{{d}}</a></h2>\n    <time datetime=\"{{dt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{n}}\n  </div>\n</div>",
+	"disqus": "<div class=\"socialfeed-item socialfeed-disqus\">\n  <i class=\"socialfeed-icon icon-comment-alt\"></i>\n  <header>\n    <h2><a href=\"{{author.profileUrl}}\">{{author.name}}</a></h2>\n    <time datetime=\"{{createdAt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{message}}\n  </div>\n</div>",
+	"github_create": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-create\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> created repository <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
+	"github_createbranch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-createbranch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      created branch <a href=\"{{branchurl}}\">{{branchname}}</a> \n      at <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
+	"github_fork": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-fork\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      forked repository <a href=\"{{repourl}}\">{{reponame}}</a>\n      to <a href=\"{{forkeeurl}}\">{{forkeename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
+	"github_issue": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-issue\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} issue <a href=\"{{issueurl}}\">{{issuename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
+	"github_pullrequest": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-pull-request\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} pull request <a href=\"{{pullrequesturl}}\">{{pullrequestname}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
+	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      pushed to <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{{commiturl}}\">{{commit}}</a>\n      <span>{{commit_message}}</span>\n    </li>\n  </ul>\n</div>",
+	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{{profileUrl}}\">{{username}}</a> starred <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
 
 };
 },{}]},{},[3])

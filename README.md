@@ -169,3 +169,37 @@ var sfeed = new SocialFeed($("#socialfeed"))
                   .addModule(new Disqus2('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
                   .start();
 ```
+
+
+## Contribute
+
+SocialFeed.js is very open for contributions. If you have built a module you think should be built in or find a bug, please send a pull request.
+
+Also feel free to post issues at https://github.com/mikaelbr/SocialFeed.js/issues. 
+
+### Contribution guide
+
+To set-up SocialFeed.js to run locally, do the following:
+```
+$ git clone git://github.com/mikaelbr/SocialFeed.js.git
+$ cd SocialFeed.js/
+```
+
+Install dependencies
+```
+$ npm install && bower install
+```
+
+This will install both the client side deps and browser side.
+
+#### Build
+
+After making your changes, build a new version of SocialFeed.js.
+
+From root, run
+
+```
+node make
+```
+
+This will build the JavaScript, compile LESS files and minify both. You can find the dist files in the ```dist``` directory.

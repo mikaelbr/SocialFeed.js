@@ -88,14 +88,14 @@ var sfeed = new SocialFeed($("#socialfeed"))
 
 To listen for a event use:
 
-```
+```javascript
 var sfeed = new SocialFeed($("#socialfeed"));
 sfeed.on('eventName', function() { /* body */ });
 ```
 
 or for Modules:
 
-```
+```javascript
 var mod1 = new SocialFeed.Modules.Github('mikaelbr');
 mod.on('eventName', function() { /* body */ });
 ```

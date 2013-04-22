@@ -12,10 +12,10 @@ At this moment the following social sites are supported:
 * Disqus
 * Delicious
 
-However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#expanding) for more information.
+However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#expanding-socialfeedjs) for more information.
 
 
-## <a id="usage"></a>Installation & Usage
+## Installation & Usage
 
 ### Requirements
 
@@ -70,7 +70,7 @@ var sfeed = new SocialFeed($("#socialfeed"))
                   .start();
 ```
 
-## <a id="api"></a>API
+## API
 
 ```SocialFeed``` exposes several functions and events. 
 
@@ -84,7 +84,7 @@ var sfeed = new SocialFeed($("#socialfeed"))
 | .addModule(Module) | Add a new module to the feed. |
 | .on(eventType, callback) | Listen for an event on the feed. See [Events](#events)|
 
-### <a id="events"></a>Events
+### Events
 
 To listen for a event use:
 
@@ -101,16 +101,14 @@ mod.on('eventName', function() { /* body */ });
 ```
 
 #### Events for a feed: 
-
 Coming soon.
 
 
 #### Events for a module:
-
 Coming soon.
 
 
-## <a id="expanding"></a>Expanding SocialFeed.js
+## Expanding SocialFeed.js
 
 ### Adding new Social sites. 
 
@@ -118,11 +116,17 @@ You can easily add new modules to SocialFeed.js. See code for example:
 
 ```javascript
 var NewModule = SocialFeed.Modules.extend({
-  url: function () {
+  init: function(ident, count) {
+    // Constructor. Omit to use default one with only "ident".
+    this.ident = ident;
+    this.count = count;
+  }
+
+  , url: function () {
     // URL can also be a string, but having it as a function
     // allows us to pass the ident value. ident is the first argument
     // to the module constructor.
-    return 'http://path.to.some/document.json?user=' + this.ident;
+    return 'http://path.to.some/document.json?user=' + this.ident + '&count=' + this.count;
   }
 
   , parse: function (resp) {
@@ -143,10 +147,25 @@ var NewModule = SocialFeed.Modules.extend({
 });
 
 var sfeed = new SocialFeed($("#socialfeed"))
-                  .addModule(new NewModule('mikaelbr'))
+                  .addModule(new NewModule('mikaelbr', 10))
                   .start();
 
 ```
 
-**More info soon**
+### Extend/Alter behaviour of existing module
 
+You can change original behaviour of the pre-defined modules by extending them and overwriting their methods.
+
+Example:
+
+```javascript
+var Disqus2 = SocialFeed.Modules.Disqus.extend({
+  render: function (item) {
+    return '<p>Allways show this message!</p>';
+  }
+});
+
+var sfeed = new SocialFeed($("#socialfeed"))
+                  .addModule(new Disqus2('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
+                  .start();
+```

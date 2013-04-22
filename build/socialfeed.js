@@ -651,7 +651,37 @@ module.exports.timesince = function (date) {
   }
   return Math.floor(seconds) + " seconds ago";
 };
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+var vent = require('./events')
+  ;
+
+var API = module.exports = function (controller) {
+};
+
+API.prototype = {
+
+  start: function () {
+    this.c.emit('start');
+    return this;
+  }
+
+  , reload: function () {
+    this.c.emit('reload');
+    return this;
+  }
+
+  , addModule: function (module) {
+    this.c.emit('addModule', module);
+    return this;
+  }
+
+  , on: function (eventType, cb) {
+    this.c.on(eventType, cb);
+    return this;
+  }
+
+};
+},{"./events":12}],5:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   , inherits = require('util').inherits
@@ -742,37 +772,7 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":2,"util":1,"./utils":7}],4:[function(require,module,exports){
-var vent = require('./events')
-  ;
-
-var API = module.exports = function (controller) {
-};
-
-API.prototype = {
-
-  start: function () {
-    this.c.emit('start');
-    return this;
-  }
-
-  , reload: function () {
-    this.c.emit('reload');
-    return this;
-  }
-
-  , addModule: function (module) {
-    this.c.emit('addModule', module);
-    return this;
-  }
-
-  , on: function (eventType, cb) {
-    this.c.on(eventType, cb);
-    return this;
-  }
-
-};
-},{"./events":12}],6:[function(require,module,exports){
+},{"events":2,"util":1,"./utils":7}],6:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   , inherits = require('util').inherits
@@ -958,7 +958,7 @@ module.exports = SocialBase.extend({
     }
 
     , 'PushEvent': function (item) {
-      var $html = $(templateHelper('push', item))
+      var $html = $(templateHelper('push', item));
 
       // Add commits: 
       var $ul = $html.find('.socialfeed-commit-list')
@@ -966,9 +966,8 @@ module.exports = SocialBase.extend({
 
       _.each(item.payload.commits, function(commit) {
         var $it = $li.clone();
-        console.log($it);
 
-        $it.find('a').attr('href', commit.url).text(commit.sha);
+        $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));
         $it.find('span').text(commit.message);
         $ul.append($it);
       });

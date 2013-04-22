@@ -47,7 +47,7 @@ module.exports = SocialBase.extend({
     }
 
     , 'PushEvent': function (item) {
-      var $html = $(templateHelper('push', item))
+      var $html = $(templateHelper('push', item));
 
       // Add commits: 
       var $ul = $html.find('.socialfeed-commit-list')
@@ -55,9 +55,8 @@ module.exports = SocialBase.extend({
 
       _.each(item.payload.commits, function(commit) {
         var $it = $li.clone();
-        console.log($it);
 
-        $it.find('a').attr('href', commit.url).text(commit.sha);
+        $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));
         $it.find('span').text(commit.message);
         $ul.append($it);
       });
@@ -75,8 +74,8 @@ module.exports = SocialBase.extend({
 
     , 'ForkEvent': function (item) {
       return templateHelper('fork', item)
-                    .replace('{{forkeeurl}}', item.payload.forkee.html_url)
-                    .replace('{{forkeename}}', item.payload.forkee.full_name);
+                .replace('{{forkeeurl}}', item.payload.forkee.html_url)
+                .replace('{{forkeename}}', item.payload.forkee.full_name);
     }
 
     , 'IssuesEvent': function (item) {

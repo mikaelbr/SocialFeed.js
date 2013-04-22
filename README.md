@@ -29,7 +29,7 @@ optionally the [CSS file](https://raw.github.com/mikaelbr/SocialFeed.js/master/b
 
 Import all dependancies and the SocialFeed.js code.
 
-```
+```html
 <html>
   <head>
     <title>SocialFeed.js</title>

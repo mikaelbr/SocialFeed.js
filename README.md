@@ -96,7 +96,7 @@ sfeed.on('eventName', function() { /* body */ });
 or for Modules:
 
 ```javascript
-var mod1 = new SocialFeed.Modules.Github('mikaelbr');
+var mod = new SocialFeed.Modules.Github('mikaelbr');
 mod.on('eventName', function() { /* body */ });
 ```
 

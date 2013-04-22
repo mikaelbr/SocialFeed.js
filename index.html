@@ -1,0 +1,29 @@
+<html>
+<head>
+  <title>SocialFeed test</title>
+</head>
+<body>
+
+  <div id="socialfeed"></div>
+
+  <script src="components/jquery/jquery.js"></script>
+  <script src="components/underscore/underscore.js"></script>
+  <script src="build/socialfeed.min.js"></script>
+  <script>
+
+    ;(function () {
+      var sfeed1 = new SocialFeed($('#socialfeed'))
+                  .addModule(new SocialFeed.Modules.Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
+                  .addModule(new SocialFeed.Modules.Github('mikaelbr'))
+                  .addModule(new SocialFeed.Modules.Delicious('mikaelbr'))
+                  .start();
+
+      sfeed1.on('feed:synced', function () {
+        console.log('Synced!');
+      });
+    })();
+    
+
+  </script>
+</body>
+</html>

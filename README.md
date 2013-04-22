@@ -100,12 +100,25 @@ var mod1 = new SocialFeed.Modules.Github('mikaelbr');
 mod.on('eventName', function() { /* body */ });
 ```
 
-#### Events for a feed: 
-Coming soon.
+#### Events for a feed
+
+| Event Type    |  Passed arguments     | Description           |
+| ------------- | ----------------------| ----------------------|
+| start         | None | Triggered when ```.start()``` is called |
+| reload        | None | Triggered when ```.reload()``` is called |
+| moduleAdded   | AddedModule | Triggered when module is added |
+| preFetch      | None | Triggered before fetching data from modules. |
+| postFetch     | AllModels[] | Triggered when all modules are fetched |
+| rendered      | SortedHTMLList | Triggered after done rendering |
+| error         | Module, jqXHR, AjaxOptions | Triggered when error fetching some module data. |
 
 
-#### Events for a module:
-Coming soon.
+#### Events for a module
+
+| Event Type    |  Passed arguments     | Description           |
+| ------------- | ----------------------| ----------------------|
+| error         |  Module, jqXHR, AjaxOptions | Triggered on error fetching module data. |
+| fetched       |  Module, jqXHR, AjaxOptions | Triggered when data for module is fetched. |
 
 
 ## Expanding SocialFeed.js

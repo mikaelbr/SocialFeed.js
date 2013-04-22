@@ -4,7 +4,8 @@ require('shelljs/global');
 var fs      = require('fs')
   , path = require('path')
   , browserify = require('browserify')
-  , UglifyJS = require("uglify-js");
+  , UglifyJS = require("uglify-js")
+  , less = require('less')
   ;
 
 var buildPath = path.join(__dirname, 'build/socialfeed.js')
@@ -12,7 +13,9 @@ var buildPath = path.join(__dirname, 'build/socialfeed.js')
 
 target.all = function () {
   target.bundle(function () {
-    target.minify();
+    target.less(function () {
+      target.minify();
+    });
   });
 };
 
@@ -20,7 +23,26 @@ target.bundle = function (cb) {
   console.log('Bundle');
   bundleResources('src/moduletemplates/', 'src/resources.js');
   bundle(cb);
-}
+};
+
+target.less = function (cb) {
+  console.log('Compiling LESS');
+  var data = fs.readFileSync('src/style.less');
+  data = data.toString();
+
+  var parser = new(less.Parser)({
+    paths: ['./src'], // Specify search paths for @import directives
+    filename: 'style.less' // Specify a filename, for better error messages
+  });
+
+  parser.parse(data, function (e, tree) {
+    var css = tree.toCSS()
+      , minified = tree.toCSS({ compress: true });
+    fs.writeFile('build/socialfeed.css', css);
+    console.log('Minifing CSS');
+    fs.writeFile('build/socialfeed.min.css', minified, cb);
+  });
+};
 
 target.minify = function () {
   console.log('Minifying...');
@@ -30,7 +52,7 @@ target.minify = function () {
 };
 
 function getResourcesList (templateFolder) {
-  var filenames = fs.readdirSync(path.join(__dirname, templateFolder))
+  var filenames = fs.readdirSync(path.join(__dirname, templateFolder));
   return filenames.map(function (file) {
     return file.replace('.html', '');
   });
@@ -58,7 +80,7 @@ function bundle(cb) {
 
     fs.writeFileSync(buildPath, src);
     console.log('Build succeeded, open index.html to see the result.');
-    cb()
+    cb();
   });
 }
 

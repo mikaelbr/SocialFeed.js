@@ -53,7 +53,7 @@ SocialFeed has a simple constructor. If you only pass it a jQuery event, all mod
 passing the ```count```-option. Even if ```count``` is 5, all module items are fetched from the different APIs, but only the first 5 are rendered.
 
 Constructor:
-```
+```javascript
 new SocialFeed({
     el: $('#foo')
   , count: 10 // defaults to 1000
@@ -64,7 +64,7 @@ new SocialFeed({
 If you set offset to ```N```, the first ```N``` items won't show.
 
 Shortcut:
-```
+```javascript
 new SocialFeed($('#foo'));
 ```
 
@@ -72,12 +72,12 @@ Let's see how we can add Github and Delicious as a part of the feed (using the t
 
 ```javascript
 var sfeed = new SocialFeed({
-                      el: $("#socialfeed")
-                    , count: 10
-                  })
-                  .addModule(new SocialFeed.Modules.Github('mikaelbr')) // argument: username
-                  .addModule(new SocialFeed.Modules.Delicious('mikaelbr')) // argument: username
-                  .start();
+                el: $("#socialfeed")
+              , count: 10
+            })
+            .addModule(new SocialFeed.Modules.Github('mikaelbr')) // argument: username
+            .addModule(new SocialFeed.Modules.Delicious('mikaelbr')) // argument: username
+            .start();
 ```
 
 This will populate the ```#socialfeed``` element when data from both of the social sites are loaded. 

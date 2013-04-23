@@ -119,7 +119,8 @@ mod.on('eventName', function() { /* body */ });
 | ```moduleAdded```| AddedModule | Triggered when module is added |
 | ```preFetch```   | None | Triggered before fetching data from modules. |
 | ```postFetch```  | AllModels[] | Triggered when all modules are fetched |
-| ```rendered```   | SortedHTMLList | Triggered after done rendering |
+| ```dataReady```  | SortedHTMLList, AllModels[] | Triggered when all data is generated as HTML. |
+| ```rendered```   | SortedHTMLList{from _offset, to count} | Triggered when rendering new items. Passes the sorted HTML list with the rendered entities. |
 | ```error```      | Module, jqXHR, AjaxOptions | Triggered when error fetching some module data. |
 
 

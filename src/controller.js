@@ -78,7 +78,7 @@ _.extend(Controller.prototype, {
 
     if (this.feedRendered === null) {
       this.feedRendered = this._generateOrderedList();
-      this.emit('synced', this.feedRendered, this.modules);
+      this.emit('dataReady', this.feedRendered, this.modules);
     }
 
     var list = this.feedRendered.slice(this._offset, (this._offset + this.count));

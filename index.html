@@ -52,8 +52,9 @@
                   .addModule(new SocialFeed.Modules.YouTubeUploads('nettutsplus'))
                   .start();
 
-      sfeed1.on('feed:synced', function () {
-        console.log('Synced!');
+      sfeed1.on('dataReady', function (htmlList, modules) {
+        console.log(htmlList);
+        console.log(modules);
       });
 
       window.sfeed = sfeed1;

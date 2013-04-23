@@ -49,10 +49,32 @@ Import all dependancies and the SocialFeed.js code.
 SocialFeed.js is very modular, and every different social site is implemented as it's own module. By default, no social site is added, 
 you have to explicitly add every social function. This to be as customizable as possible. 
 
+SocialFeed has a simple constructor. If you only pass it a jQuery event, all module items will be rendered, but you can restrict this by
+passing the ```count```-option. Even if ```count``` is 5, all module items are fetched from the different APIs, but only the first 5 are rendered.
+
+Constructor:
+```
+new SocialFeed({
+    el: $('#foo')
+  , count: 10 // defaults to 1000
+  , offset: 10 // defaults to 0. Start rendering from offset.
+});
+```
+
+If you set offset to ```N```, the first ```N``` items won't show.
+
+Shortcut:
+```
+new SocialFeed($('#foo'));
+```
+
 Let's see how we can add Github and Delicious as a part of the feed (using the template as defined above.):
 
 ```javascript
-var sfeed = new SocialFeed($("#socialfeed"))
+var sfeed = new SocialFeed({
+                      el: $("#socialfeed")
+                    , count: 10
+                  })
                   .addModule(new SocialFeed.Modules.Github('mikaelbr')) // argument: username
                   .addModule(new SocialFeed.Modules.Delicious('mikaelbr')) // argument: username
                   .start();

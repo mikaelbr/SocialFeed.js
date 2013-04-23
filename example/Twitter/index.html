@@ -1,0 +1,59 @@
+<html>
+<head>
+  <title>SocialFeed test</title>
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="../../build/socialfeed.min.css">
+
+  <style>
+    body {
+      background: #3f4c6b; /* Old browsers */
+      background: -moz-radial-gradient(center, ellipse cover,  #3f4c6b 0%, #3f4c6b 100%); /* FF3.6+ */
+      background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#3f4c6b), color-stop(100%,#3f4c6b)); /* Chrome,Safari4+ */
+      background: -webkit-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* Chrome10+,Safari5.1+ */
+      background: -o-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* Opera 12+ */
+      background: -ms-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* IE10+ */
+      background: radial-gradient(ellipse at center,  #3f4c6b 0%,#3f4c6b 100%); /* W3C */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f4c6b', endColorstr='#3f4c6b',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+      color: #f9f9f9;
+    }
+
+    a:link, a:visited {
+      color: #33D5F5;
+      text-decoration: none;
+      transition: 500ms;
+    }
+
+    a:hover, a:active {
+      color: #0CAAC9;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="socialfeed" class="socialfeed-container">
+
+  </div>
+
+  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../build/socialfeed.js"></script>
+  <script src="js/TwitterModule.js"></script>
+  <script>
+
+    ;(function () {
+      new SocialFeed({
+          el: $('#socialfeed')
+      })
+      .addModule(new SocialFeed.Modules.Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
+      .addModule(new SocialFeed.Modules.Github('mikaelbr', {
+        'IssuesEvent': false
+      }))
+      .addModule(new SocialFeed.Modules.Delicious('mikaelbr'))
+      .addModule(new TwitterModule())
+      .start();
+    })();
+    
+
+  </script>
+</body>
+</html>

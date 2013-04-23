@@ -1,6 +1,7 @@
 
 @pagewidth: 600px;
 @iconsize: 35px;
+@imgmargin: 20px;
 
 .socialfeed-container {
   width: @pagewidth;
@@ -15,6 +16,19 @@
     
     position: relative;
     padding: 10px 0;
+
+    .youtube-preview {
+      // Set youtube iframe settings.
+      width: unit(@pagewidth - @imgmargin, px);
+    }
+
+    iframe.youtube-preview {
+      height: unit(unit(@pagewidth - @imgmargin, px) * 3/4, px);
+    }
+
+    img.youtube-preview {
+      cursor: hand;
+    }
 
     header {
       position: relative;

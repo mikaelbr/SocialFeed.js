@@ -1,0 +1,15 @@
+<div class="socialfeed-item socialfeed-youtube socialfeed-youtube-upload">
+  <i class="socialfeed-icon icon-youtube"></i>
+  <header>
+    <h2><a href="{{profileurl}}">{{username}}</a> added a video: <a href="{{videourl}}">{{videoname}}</a></h2>
+    <time datetime="{{created_at}}">{{time_since}}</time>
+  </header>
+  <div class="socialfeed-body">
+    <iframe class="youtube-preview"
+      src="http://www.youtube.com/embed/{{entryid}}?wmode=transparent&amp;HD=0&amp;rel=0&amp;showinfo=0&amp;controls=1&amp;autoplay=0" 
+      frameborder="0" 
+      allowfullscreen>
+    </iframe>
+    <p>{{desc}}</p>
+  </div>
+</div>

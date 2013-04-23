@@ -9,6 +9,15 @@
   position: relative;
   padding: 10px 0;
 }
+.socialfeed-container .socialfeed-item .youtube-preview {
+  width: 580px;
+}
+.socialfeed-container .socialfeed-item iframe.youtube-preview {
+  height: 435px;
+}
+.socialfeed-container .socialfeed-item img.youtube-preview {
+  cursor: hand;
+}
 .socialfeed-container .socialfeed-item header {
   position: relative;
 }

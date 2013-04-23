@@ -16,6 +16,7 @@ _.inherits(SocialFeed, API);
 window.SocialFeed.Modules = {
     Disqus: require('./modules/disqus')
   , Github: require('./modules/github')
+  , YouTubeUploads: require('./modules/youtubeuploads')
   , Delicious: require('./modules/delicious')
   , SocialBase: SocialBase
   , extend: function (module) {

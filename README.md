@@ -20,7 +20,6 @@ However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#
 ### Requirements
 
 * [jQuery](http://jquery.com/) 
-* [Underscore](http://underscorejs.org/)
 
 ### Install
 
@@ -39,7 +38,6 @@ Import all dependancies and the SocialFeed.js code.
     <div id="socialfeed"></div>
     <!-- Import Scripts -->
     <script src="components/jquery/jquery.js"></script>
-    <script src="components/underscore/underscore.js"></script>
     <script src="build/socialfeed.min.js"></script>
   </body>
 </html>
@@ -172,14 +170,14 @@ You can change original behaviour of the pre-defined modules by extending them a
 Example:
 
 ```javascript
-var Disqus2 = SocialFeed.Modules.Disqus.extend({
+var Disqus = SocialFeed.Modules.Disqus.extend({
   render: function (item) {
     return '<p>Allways show this message!</p>';
   }
 });
 
 var sfeed = new SocialFeed($("#socialfeed"))
-                  .addModule(new Disqus2('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
+                  .addModule(new Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
                   .start();
 ```
 
@@ -200,19 +198,19 @@ $ cd SocialFeed.js/
 
 Install dependencies
 ```
-$ npm install && bower install
+$ make deps
 ```
 
 This will install both the client side deps and browser side.
 
 #### Build
 
-After making your changes, build a new version of SocialFeed.js.
+After making your changes, bundle a new version of SocialFeed.js.
 
 From root, run
 
 ```
-node make
+make bundle
 ```
 
 This will build the JavaScript, compile LESS files and minify both. You can find the dist files in the ```dist``` directory.

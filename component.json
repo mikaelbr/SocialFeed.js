@@ -1,11 +1,12 @@
 {
   "name": "socialfeed",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "ignore": [
     "**/.*",
     "node_modules",
     "components"
   ],
+  "main": "build/socialfeed.js",
   "dependencies": {
     "jquery": "~1.9.1"
   }

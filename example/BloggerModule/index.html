@@ -1,0 +1,72 @@
+<html>
+<head>
+  <title>Blogger Test</title>
+  <link rel="stylesheet" type="text/css" href="../../build/socialfeed.min.css">
+
+  <style>
+    p { width: 600px; margin: 10px auto;}
+  </style>
+</head>
+<body>
+
+  <p>Showing the ten latest blog posts of Elijah Manors blog: <a href="http://www.elijahmanor.com/">Web Dev .NET</a></p>
+  
+  <p><a href="http://www.elijahmanor.com/">Web Dev .NET</a> uses Blogger, so this example can be used for every Blogger blog.</p>  
+
+  <ol id="socialfeed" class="socialfeed-container"></ol>
+
+  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../build/socialfeed.js"></script>
+  <script>
+
+    ;(function () {
+
+      var WebDevNET_Blogger = SocialFeed.Modules.extend({
+
+        init: function (maxResults) {
+          this.count = maxResults || 10;
+        }
+
+        , url: function () {
+          return 'http://www.elijahmanor.com/feeds/posts/default?alt=json-in-script&max-results=' + this.count;
+        }
+
+        , parse: function (resp) {
+          var feed = resp.feed;
+          return feed.entry || [];
+        }
+
+        , orderBy: function (item) {
+          return -(new Date(item.published.$t)).getTime();
+        }
+
+        , getLink: function (links) {
+          for(var i = 0, len = links.length; i < len; i++) {
+            if (links[i].rel === 'alternate') {
+              return links[i].href;
+            }
+          }
+
+          return null;
+        }
+
+        , render: function (item) {
+          var link =  this.getLink(item.link);
+          if (!link) return null; // Do not show this post. 
+          return '<li><h2><a href="' + link + '">'+ item.title.$t +'</a></h2></li>';
+        }
+
+      });
+
+      var sfeed1 = new SocialFeed({
+            el: $('#socialfeed')
+          , count: 10 // Start by showing the 10 first posts. 
+        })
+        .addModule(new WebDevNET_Blogger())
+        .start();
+    })();
+    
+
+  </script>
+</body>
+</html>

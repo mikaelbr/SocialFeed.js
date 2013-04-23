@@ -11,15 +11,22 @@ var SocialBase = require('../basemodule')
     issue: resources.github_issue
   };
 
-var templateHelper = function (template, item) {
+var getRepoURL = function (item) {
+  return 'https://github.com/' + item.repo.name;
+}
+, getUserURL = function (item) {
+  return 'https://github.com/' + item.actor.login;
+}
+, templateHelper = function (template, item) {
   return tmpl[template]
-            .replace('{{profileUrl}}', item.actor.url)
+            .replace('{{profileUrl}}', getUserURL(item))
             .replace('{{username}}', item.actor.login)
             .replace('{{reponame}}', item.repo.name)
-            .replace('{{repourl}}', 'https://github.com/' + item.repo.name)
+            .replace('{{repourl}}', getRepoURL(item))
             .replace('{{time_since}}', _.timesince(item.created_at))
             .replace('{{created_at}}', item.created_at);
-};
+}
+;
 
 var defaultVisibility = {
     'CreateEvent': true
@@ -52,7 +59,7 @@ module.exports = SocialBase.extend({
       }
 
       return templateHelper('createbranch', item)
-                .replace('{{branchurl}}', item.repo.url + '/tree/' + item.payload.ref)
+                .replace('{{branchurl}}', getRepoURL(item) + '/tree/' + item.payload.ref)
                 .replace('{{branchname}}', item.payload.ref);
     }
 
@@ -70,7 +77,9 @@ module.exports = SocialBase.extend({
       item.payload.commits.forEach(function(commit) {
         var $it = $li.clone();
 
-        $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));
+        $it.find('a')
+          .attr('href', getRepoURL(item) + '/commit/' + commit.sha)
+          .text(commit.sha.substr(0, 7));
         $it.find('span').text(commit.message);
         $ul.prepend($it);
       });

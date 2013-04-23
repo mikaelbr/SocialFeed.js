@@ -91,7 +91,6 @@ var sfeed = new SocialFeed($("#socialfeed"))
                   .start();
 ```
 
-
 #### Built in Modules
 
 Every built in module is under the namespace ```SocialFeed.Modules```.
@@ -217,6 +216,10 @@ var sfeed = new SocialFeed($("#socialfeed"))
                   .addModule(new Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
                   .start();
 ```
+
+## Examples 
+
+See [examples](./examples/) for more code snippets and help.
 
 
 ## Contribute

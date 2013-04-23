@@ -24,7 +24,7 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"./controller":2,"./api":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],3:[function(require,module,exports){
+},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -381,7 +381,99 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":10}],4:[function(require,module,exports){
+},{"__browserify_process":10}],3:[function(require,module,exports){
+var EventEmitter = require('events').EventEmitter
+  , _ = require('./utils')
+  ;
+
+var Controller = module.exports = function ($el) {
+  this.modules = [];
+  this.feedRendered = [];
+
+  this.$el = $el || null;
+
+  this.on('start', _.bind(this.start, this));
+  this.on('reload', _.bind(this.reload));
+  this.on('addModule', _.bind(this.addModule));
+  this.on('synced', _.bind(this.render));
+};
+_.inherits(Controller, EventEmitter);
+
+_.extend(Controller.prototype, {
+  _sync_count: 0
+
+  , addModule: function (module) {
+    this.modules.push(module);
+    this.emit('moduleAdded', module);
+  }
+
+  , start: function () {
+    var controller = this;
+    controller.modules.forEach(function (module) {
+      module.fetch();
+      module.on('fetched', _.bind(controller.moduleFetched, controller));
+      module.on('error', function () { 
+        controller.emit.apply(controller, ['error'].concat(arguments));
+      });
+    });
+  }
+
+  , moduleFetched: function (a, b, c) {
+    if (++this._sync_count === this.modules.length) {
+      // all done
+      this.emit('synced');
+      this.emit('postFetch', this.modules);
+      this._sync_count = 0;
+    }
+  }
+
+  , reload: function () {
+    this.$el.empty();
+    this.emit('preFetch');
+    this.modules.forEach(function (module) {
+      module.fetch();
+    });
+  }
+
+  , render: function () {
+    var $el = this.$el
+      , list = this._generateOrderedList()
+      ;
+
+    list.forEach(function (item) {
+      $el.append(item.html);
+    });
+    this.emit('rendered', list)
+    return this;
+  }
+
+  , _generateOrderedList: function () {
+    var list = [];
+    this.modules.forEach(function (module) {
+      var collectionlist = module.collection.map(function (item) {
+        return {
+          orderBy: module.orderBy(item),
+          html: module.render(item)
+        };
+      });
+      list = list.concat(collectionlist);
+    });
+
+    return this._orderList(list);
+  }
+
+  , _orderList: function (list) {
+    return list.sort(function (x, y) {
+      var a = x.orderBy;
+      var b = y.orderBy;
+      if (a > b || a === void 0) return 1;
+      if (a <= b || b === void 0) return -1;
+    });
+  }
+
+
+});
+},{"events":11,"./utils":5}],4:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -478,98 +570,6 @@ _.extend(SocialBase.prototype, {
   , orderBy: function (item) {  }
 
   , render: function (item) {  }
-
-});
-},{"events":11,"./utils":5}],2:[function(require,module,exports){
-var EventEmitter = require('events').EventEmitter
-  , _ = require('./utils')
-  ;
-
-var Controller = module.exports = function ($el) {
-  this.modules = [];
-  this.feedRendered = [];
-
-  this.$el = $el || null;
-
-  this.on('start', _.bind(this.start, this));
-  this.on('reload', _.bind(this.reload));
-  this.on('addModule', _.bind(this.addModule));
-  this.on('synced', _.bind(this.render));
-};
-_.inherits(Controller, EventEmitter);
-
-_.extend(Controller.prototype, {
-  _sync_count: 0
-
-  , addModule: function (module) {
-    this.modules.push(module);
-    this.emit('moduleAdded', module);
-  }
-
-  , start: function () {
-    var controller = this;
-    controller.modules.forEach(function (module) {
-      module.fetch();
-      module.on('fetched', _.bind(controller.moduleFetched, controller));
-      module.on('error', function () { 
-        controller.emit.apply(controller, ['error'].concat(arguments));
-      });
-    });
-  }
-
-  , moduleFetched: function (a, b, c) {
-    if (++this._sync_count === this.modules.length) {
-      // all done
-      this.emit('synced');
-      this.emit('postFetch', this.modules);
-      this._sync_count = 0;
-    }
-  }
-
-  , reload: function () {
-    this.$el.empty();
-    this.emit('preFetch');
-    this.modules.forEach(function (module) {
-      module.fetch();
-    });
-  }
-
-  , render: function () {
-    var $el = this.$el
-      , list = this._generateOrderedList()
-      ;
-
-    list.forEach(function (item) {
-      $el.append(item.html);
-    });
-    this.emit('rendered', list)
-    return this;
-  }
-
-  , _generateOrderedList: function () {
-    var list = [];
-    this.modules.forEach(function (module) {
-      var collectionlist = module.collection.map(function (item) {
-        return {
-          orderBy: module.orderBy(item),
-          html: module.render(item)
-        };
-      });
-      list = list.concat(collectionlist);
-    });
-
-    return this._orderList(list);
-  }
-
-  , _orderList: function (list) {
-    return list.sort(function (x, y) {
-      var a = x.orderBy;
-      var b = y.orderBy;
-      if (a > b || a === void 0) return 1;
-      if (a <= b || b === void 0) return -1;
-    });
-  }
-
 
 });
 },{"events":11,"./utils":5}],6:[function(require,module,exports){
@@ -734,7 +734,6 @@ module.exports = SocialBase.extend({
 
   , parse: function (resp) {
     var feed = resp.feed;
-    console.log(feed.entry);
     return feed.entry || [];
   }
 
@@ -773,9 +772,7 @@ module.exports = SocialBase.extend({
               .replace('{{entryid}}', item.id.$t.substring(38))
               .replace('{{desc}}', item['media$group']['media$description'].$t);
 
-    $html = this.hideAndMakeYoutubeClickable(item, html);
-    console.log($html[0]);
-    return $html;
+    return this.hideAndMakeYoutubeClickable(item, html);
   }
 
 });

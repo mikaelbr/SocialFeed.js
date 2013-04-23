@@ -27,27 +27,25 @@ target.bundle = function (cb) {
 
 target.less = function (cb) {
   console.log('Compiling LESS');
-  var data = fs.readFileSync('src/style.less');
-  data = data.toString();
+  var data = cat('src/style.less');
 
   var parser = new(less.Parser)({
-    paths: ['./src'], // Specify search paths for @import directives
-    filename: 'style.less' // Specify a filename, for better error messages
+      paths: ['./src']
+    , filename: 'style.less' 
   });
 
   parser.parse(data, function (e, tree) {
     var css = tree.toCSS()
       , minified = tree.toCSS({ compress: true });
-    fs.writeFile('build/socialfeed.css', css);
+    css.to('build/socialfeed.css');
     console.log('Minifing CSS');
-    fs.writeFile('build/socialfeed.min.css', minified, cb);
+    minified.to('build/socialfeed.min.css');
   });
 };
 
 target.minify = function () {
   console.log('Minifying...');
-  var result = UglifyJS.minify(buildPath);
-  fs.writeFileSync(minifiedPath, result.code);
+  UglifyJS.minify(buildPath).code.to(minifiedPath)
   console.log('Minfying succeeded.');
 };
 
@@ -69,16 +67,15 @@ function bundleResources (source, target) {
   cat('src/resources.js.template').replace(/%BODY%/g, resourceString).to(path.join(__dirname, target));
 }
 
-
 function bundle(cb) {
   cb = cb || function () {};
-  // This is function is the important part and should be similar to what you would use for your project
+
   browserify()
   .require(require.resolve('./src/socialfeed.js'), { entry: true })
   .bundle(function (err, src) {
     if (err) return console.error(err);
 
-    fs.writeFileSync(buildPath, src);
+    src.to(buildPath);
     console.log('Build succeeded, open index.html to see the result.');
     cb();
   });

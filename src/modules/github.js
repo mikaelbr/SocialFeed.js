@@ -72,7 +72,7 @@ module.exports = SocialBase.extend({
 
         $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));
         $it.find('span').text(commit.message);
-        $ul.append($it);
+        $ul.prepend($it);
       });
       $li.remove();
       return $html;

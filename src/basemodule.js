@@ -1,13 +1,12 @@
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 };
-inherits(SocialBase, EventEmitter);
+_.inherits(SocialBase, EventEmitter);
 
 SocialBase.extend = function (protoProps, staticProps) {
   var parent = this;

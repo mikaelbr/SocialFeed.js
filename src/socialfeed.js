@@ -3,7 +3,6 @@ var API = require('./api')
   , Controller = require('./controller')
   , SocialBase = require('./basemodule')
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var SocialFeed = window.SocialFeed = function ($el) {
@@ -11,7 +10,7 @@ var SocialFeed = window.SocialFeed = function ($el) {
   this.c = new Controller($el);
 };
 
-inherits(SocialFeed, API);
+_.inherits(SocialFeed, API);
 
 // Make modules available:
 window.SocialFeed.Modules = {

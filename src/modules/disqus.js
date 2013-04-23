@@ -1,5 +1,6 @@
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
   ;
 
 module.exports = SocialBase.extend({

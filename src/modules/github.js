@@ -53,7 +53,7 @@ module.exports = SocialBase.extend({
       var $ul = $html.find('.socialfeed-commit-list')
         , $li = $ul.find('li:first');
 
-      _.each(item.payload.commits, function(commit) {
+      item.payload.commits.forEach(function(commit) {
         var $it = $li.clone();
 
         $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));

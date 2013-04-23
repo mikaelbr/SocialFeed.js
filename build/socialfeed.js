@@ -1,363 +1,9 @@
 ;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
-var events = require('events');
-
-exports.isArray = isArray;
-exports.isDate = function(obj){return Object.prototype.toString.call(obj) === '[object Date]'};
-exports.isRegExp = function(obj){return Object.prototype.toString.call(obj) === '[object RegExp]'};
-
-
-exports.print = function () {};
-exports.puts = function () {};
-exports.debug = function() {};
-
-exports.inspect = function(obj, showHidden, depth, colors) {
-  var seen = [];
-
-  var stylize = function(str, styleType) {
-    // http://en.wikipedia.org/wiki/ANSI_escape_code#graphics
-    var styles =
-        { 'bold' : [1, 22],
-          'italic' : [3, 23],
-          'underline' : [4, 24],
-          'inverse' : [7, 27],
-          'white' : [37, 39],
-          'grey' : [90, 39],
-          'black' : [30, 39],
-          'blue' : [34, 39],
-          'cyan' : [36, 39],
-          'green' : [32, 39],
-          'magenta' : [35, 39],
-          'red' : [31, 39],
-          'yellow' : [33, 39] };
-
-    var style =
-        { 'special': 'cyan',
-          'number': 'blue',
-          'boolean': 'yellow',
-          'undefined': 'grey',
-          'null': 'bold',
-          'string': 'green',
-          'date': 'magenta',
-          // "name": intentionally not styling
-          'regexp': 'red' }[styleType];
-
-    if (style) {
-      return '\033[' + styles[style][0] + 'm' + str +
-             '\033[' + styles[style][1] + 'm';
-    } else {
-      return str;
-    }
-  };
-  if (! colors) {
-    stylize = function(str, styleType) { return str; };
-  }
-
-  function format(value, recurseTimes) {
-    // Provide a hook for user-specified inspect functions.
-    // Check that value is an object with an inspect function on it
-    if (value && typeof value.inspect === 'function' &&
-        // Filter out the util module, it's inspect function is special
-        value !== exports &&
-        // Also filter out any prototype objects using the circular check.
-        !(value.constructor && value.constructor.prototype === value)) {
-      return value.inspect(recurseTimes);
-    }
-
-    // Primitive types cannot have properties
-    switch (typeof value) {
-      case 'undefined':
-        return stylize('undefined', 'undefined');
-
-      case 'string':
-        var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
-                                                 .replace(/'/g, "\\'")
-                                                 .replace(/\\"/g, '"') + '\'';
-        return stylize(simple, 'string');
-
-      case 'number':
-        return stylize('' + value, 'number');
-
-      case 'boolean':
-        return stylize('' + value, 'boolean');
-    }
-    // For some reason typeof null is "object", so special case here.
-    if (value === null) {
-      return stylize('null', 'null');
-    }
-
-    // Look up the keys of the object.
-    var visible_keys = Object_keys(value);
-    var keys = showHidden ? Object_getOwnPropertyNames(value) : visible_keys;
-
-    // Functions without properties can be shortcutted.
-    if (typeof value === 'function' && keys.length === 0) {
-      if (isRegExp(value)) {
-        return stylize('' + value, 'regexp');
-      } else {
-        var name = value.name ? ': ' + value.name : '';
-        return stylize('[Function' + name + ']', 'special');
-      }
-    }
-
-    // Dates without properties can be shortcutted
-    if (isDate(value) && keys.length === 0) {
-      return stylize(value.toUTCString(), 'date');
-    }
-
-    var base, type, braces;
-    // Determine the object type
-    if (isArray(value)) {
-      type = 'Array';
-      braces = ['[', ']'];
-    } else {
-      type = 'Object';
-      braces = ['{', '}'];
-    }
-
-    // Make functions say that they are functions
-    if (typeof value === 'function') {
-      var n = value.name ? ': ' + value.name : '';
-      base = (isRegExp(value)) ? ' ' + value : ' [Function' + n + ']';
-    } else {
-      base = '';
-    }
-
-    // Make dates with properties first say the date
-    if (isDate(value)) {
-      base = ' ' + value.toUTCString();
-    }
-
-    if (keys.length === 0) {
-      return braces[0] + base + braces[1];
-    }
-
-    if (recurseTimes < 0) {
-      if (isRegExp(value)) {
-        return stylize('' + value, 'regexp');
-      } else {
-        return stylize('[Object]', 'special');
-      }
-    }
-
-    seen.push(value);
-
-    var output = keys.map(function(key) {
-      var name, str;
-      if (value.__lookupGetter__) {
-        if (value.__lookupGetter__(key)) {
-          if (value.__lookupSetter__(key)) {
-            str = stylize('[Getter/Setter]', 'special');
-          } else {
-            str = stylize('[Getter]', 'special');
-          }
-        } else {
-          if (value.__lookupSetter__(key)) {
-            str = stylize('[Setter]', 'special');
-          }
-        }
-      }
-      if (visible_keys.indexOf(key) < 0) {
-        name = '[' + key + ']';
-      }
-      if (!str) {
-        if (seen.indexOf(value[key]) < 0) {
-          if (recurseTimes === null) {
-            str = format(value[key]);
-          } else {
-            str = format(value[key], recurseTimes - 1);
-          }
-          if (str.indexOf('\n') > -1) {
-            if (isArray(value)) {
-              str = str.split('\n').map(function(line) {
-                return '  ' + line;
-              }).join('\n').substr(2);
-            } else {
-              str = '\n' + str.split('\n').map(function(line) {
-                return '   ' + line;
-              }).join('\n');
-            }
-          }
-        } else {
-          str = stylize('[Circular]', 'special');
-        }
-      }
-      if (typeof name === 'undefined') {
-        if (type === 'Array' && key.match(/^\d+$/)) {
-          return str;
-        }
-        name = JSON.stringify('' + key);
-        if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-          name = name.substr(1, name.length - 2);
-          name = stylize(name, 'name');
-        } else {
-          name = name.replace(/'/g, "\\'")
-                     .replace(/\\"/g, '"')
-                     .replace(/(^"|"$)/g, "'");
-          name = stylize(name, 'string');
-        }
-      }
-
-      return name + ': ' + str;
-    });
-
-    seen.pop();
-
-    var numLinesEst = 0;
-    var length = output.reduce(function(prev, cur) {
-      numLinesEst++;
-      if (cur.indexOf('\n') >= 0) numLinesEst++;
-      return prev + cur.length + 1;
-    }, 0);
-
-    if (length > 50) {
-      output = braces[0] +
-               (base === '' ? '' : base + '\n ') +
-               ' ' +
-               output.join(',\n  ') +
-               ' ' +
-               braces[1];
-
-    } else {
-      output = braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
-    }
-
-    return output;
-  }
-  return format(obj, (typeof depth === 'undefined' ? 2 : depth));
-};
-
-
-function isArray(ar) {
-  return ar instanceof Array ||
-         Array.isArray(ar) ||
-         (ar && ar !== Object.prototype && isArray(ar.__proto__));
-}
-
-
-function isRegExp(re) {
-  return re instanceof RegExp ||
-    (typeof re === 'object' && Object.prototype.toString.call(re) === '[object RegExp]');
-}
-
-
-function isDate(d) {
-  if (d instanceof Date) return true;
-  if (typeof d !== 'object') return false;
-  var properties = Date.prototype && Object_getOwnPropertyNames(Date.prototype);
-  var proto = d.__proto__ && Object_getOwnPropertyNames(d.__proto__);
-  return JSON.stringify(proto) === JSON.stringify(properties);
-}
-
-function pad(n) {
-  return n < 10 ? '0' + n.toString(10) : n.toString(10);
-}
-
-var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-              'Oct', 'Nov', 'Dec'];
-
-// 26 Feb 16:19:34
-function timestamp() {
-  var d = new Date();
-  var time = [pad(d.getHours()),
-              pad(d.getMinutes()),
-              pad(d.getSeconds())].join(':');
-  return [d.getDate(), months[d.getMonth()], time].join(' ');
-}
-
-exports.log = function (msg) {};
-
-exports.pump = null;
-
-var Object_keys = Object.keys || function (obj) {
-    var res = [];
-    for (var key in obj) res.push(key);
-    return res;
-};
-
-var Object_getOwnPropertyNames = Object.getOwnPropertyNames || function (obj) {
-    var res = [];
-    for (var key in obj) {
-        if (Object.hasOwnProperty.call(obj, key)) res.push(key);
-    }
-    return res;
-};
-
-var Object_create = Object.create || function (prototype, properties) {
-    // from es5-shim
-    var object;
-    if (prototype === null) {
-        object = { '__proto__' : null };
-    }
-    else {
-        if (typeof prototype !== 'object') {
-            throw new TypeError(
-                'typeof prototype[' + (typeof prototype) + '] != \'object\''
-            );
-        }
-        var Type = function () {};
-        Type.prototype = prototype;
-        object = new Type();
-        object.__proto__ = prototype;
-    }
-    if (typeof properties !== 'undefined' && Object.defineProperties) {
-        Object.defineProperties(object, properties);
-    }
-    return object;
-};
-
-exports.inherits = function(ctor, superCtor) {
-  ctor.super_ = superCtor;
-  ctor.prototype = Object_create(superCtor.prototype, {
-    constructor: {
-      value: ctor,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
-};
-
-var formatRegExp = /%[sdj%]/g;
-exports.format = function(f) {
-  if (typeof f !== 'string') {
-    var objects = [];
-    for (var i = 0; i < arguments.length; i++) {
-      objects.push(exports.inspect(arguments[i]));
-    }
-    return objects.join(' ');
-  }
-
-  var i = 1;
-  var args = arguments;
-  var len = args.length;
-  var str = String(f).replace(formatRegExp, function(x) {
-    if (x === '%%') return '%';
-    if (i >= len) return x;
-    switch (x) {
-      case '%s': return String(args[i++]);
-      case '%d': return Number(args[i++]);
-      case '%j': return JSON.stringify(args[i++]);
-      default:
-        return x;
-    }
-  });
-  for(var x = args[i]; i < len; x = args[++i]){
-    if (x === null || typeof x !== 'object') {
-      str += ' ' + x;
-    } else {
-      str += ' ' + exports.inspect(x);
-    }
-  }
-  return str;
-};
-
-},{"events":2}],3:[function(require,module,exports){
 
 var API = require('./api')
   , Controller = require('./controller')
   , SocialBase = require('./basemodule')
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var SocialFeed = window.SocialFeed = function ($el) {
@@ -365,7 +11,7 @@ var SocialFeed = window.SocialFeed = function ($el) {
   this.c = new Controller($el);
 };
 
-inherits(SocialFeed, API);
+_.inherits(SocialFeed, API);
 
 // Make modules available:
 window.SocialFeed.Modules = {
@@ -377,7 +23,124 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"util":1,"./api":4,"./controller":5,"./basemodule":6,"./utils":7,"./modules/github":8,"./modules/disqus":9,"./modules/delicious":10}],11:[function(require,module,exports){
+},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/delicious":8}],2:[function(require,module,exports){
+var API = module.exports = function (controller) {
+};
+
+API.prototype = {
+
+  start: function () {
+    this.c.emit('start');
+    return this;
+  }
+
+  , reload: function () {
+    this.c.emit('reload');
+    return this;
+  }
+
+  , addModule: function (module) {
+    this.c.emit('addModule', module);
+    return this;
+  }
+
+  , on: function (eventType, cb) {
+    this.c.on(eventType, cb);
+    return this;
+  }
+
+};
+},{}],5:[function(require,module,exports){
+
+exports.timesince = function (date) {
+  date = new Date(date);
+  var seconds = Math.floor((new Date() - date) / 1000);
+
+  var interval = Math.floor(seconds / 31536000);
+
+  if (interval > 1) {
+    return interval + " years ago";
+  }
+  interval = Math.floor(seconds / 2592000);
+  if (interval > 1) {
+    return interval + " months ago";
+  }
+  interval = Math.floor(seconds / 86400);
+  if (interval > 1) {
+    return interval + " days ago";
+  }
+  interval = Math.floor(seconds / 3600);
+  if (interval > 1) {
+    return interval + " hours ago";
+  }
+  interval = Math.floor(seconds / 60);
+  if (interval > 1) {
+    return interval + " minutes ago";
+  }
+  return Math.floor(seconds) + " seconds ago";
+};
+
+var isFunc = exports.isFunc = function (obj) {
+  return Object.prototype.toString.call(obj) == '[object Function]';
+};
+
+exports.result = function (object, property) {
+  if (object == null) return;
+  var value = object[property];
+  return isFunc(value) ? value.call(object) : value;
+};
+
+exports.bind = function( fn, context ) {
+  var args = [].slice.call( arguments, 2 );
+  return function() {
+    return fn.apply( context || this, args.concat( [].slice.call( arguments ) ) );
+  };
+};
+
+exports.has = function (object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key);
+}
+
+exports.extend = function (obj) {
+  [].slice.call(arguments, 1).forEach(function(source) {
+    if (source) {
+      for (var prop in source) {
+        obj[prop] = source[prop];
+      }
+    }
+  });
+  return obj;
+};
+
+
+// From Node util lib
+
+/**
+ * Inherit the prototype methods from one constructor into another.
+ *
+ * The Function.prototype.inherits from lang.js rewritten as a standalone
+ * function (not on Function.prototype). NOTE: If this file is to be loaded
+ * during bootstrapping this function needs to be rewritten using some native
+ * functions as prototype setup using normal JavaScript does not work as
+ * expected during bootstrapping (see mirror.js in r114903).
+ *
+ * @param {function} ctor Constructor function which needs to inherit the
+ *     prototype.
+ * @param {function} superCtor Constructor function to inherit prototype from.
+ */
+exports.inherits = function(ctor, superCtor) {
+  ctor.super_ = superCtor;
+  ctor.prototype = Object.create(superCtor.prototype, {
+    constructor: {
+      value: ctor,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+};
+
+},{}],9:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -431,7 +194,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],2:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -617,44 +380,9 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":11}],7:[function(require,module,exports){
-
-if (!window._) {
-  throw "Underscore is required for SocialFeed to work.";
-}
-module.exports = window._;
-
-module.exports.timesince = function (date) {
-  date = new Date(date);
-  var seconds = Math.floor((new Date() - date) / 1000);
-
-  var interval = Math.floor(seconds / 31536000);
-
-  if (interval > 1) {
-    return interval + " years ago";
-  }
-  interval = Math.floor(seconds / 2592000);
-  if (interval > 1) {
-    return interval + " months ago";
-  }
-  interval = Math.floor(seconds / 86400);
-  if (interval > 1) {
-    return interval + " days ago";
-  }
-  interval = Math.floor(seconds / 3600);
-  if (interval > 1) {
-    return interval + " hours ago";
-  }
-  interval = Math.floor(seconds / 60);
-  if (interval > 1) {
-    return interval + " minutes ago";
-  }
-  return Math.floor(seconds) + " seconds ago";
-};
-},{}],5:[function(require,module,exports){
+},{"__browserify_process":9}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var Controller = module.exports = function ($el) {
@@ -664,26 +392,25 @@ var Controller = module.exports = function ($el) {
   this.$el = $el || null;
 
   this.on('start', _.bind(this.start, this));
-  this.on('reload', _.bind(this.reload, this));
-  this.on('addModule', _.bind(this.addModule, this));
-  this.on('synced', _.bind(this.render, this));
+  this.on('reload', _.bind(this.reload));
+  this.on('addModule', _.bind(this.addModule));
+  this.on('synced', _.bind(this.render));
 };
-inherits(Controller, EventEmitter);
+_.inherits(Controller, EventEmitter);
 
 _.extend(Controller.prototype, {
-  _sync_count: 0,
+  _sync_count: 0
 
-  addModule: function (module) {
+  , addModule: function (module) {
     this.modules.push(module);
     this.emit('moduleAdded', module);
   }
 
   , start: function () {
     var controller = this;
-    _.bindAll(controller);
-    _.each(this.modules, function (module) {
+    controller.modules.forEach(function (module) {
       module.fetch();
-      module.on('fetched', controller.moduleFetched);
+      module.on('fetched', _.bind(controller.moduleFetched, controller));
       module.on('error', function () { 
         controller.emit.apply(controller, ['error'].concat(arguments));
       });
@@ -702,7 +429,7 @@ _.extend(Controller.prototype, {
   , reload: function () {
     this.$el.empty();
     this.emit('preFetch');
-    _.each(this.modules, function (module) {
+    this.modules.forEach(function (module) {
       module.fetch();
     });
   }
@@ -712,7 +439,7 @@ _.extend(Controller.prototype, {
       , list = this._generateOrderedList()
       ;
 
-    _.each(list, function (item) {
+    list.forEach(function (item) {
       $el.append(item.html);
     });
     this.emit('rendered', list)
@@ -721,8 +448,8 @@ _.extend(Controller.prototype, {
 
   , _generateOrderedList: function () {
     var list = [];
-    _.each(this.modules, function (module) {
-      var collectionlist = _.map(module.collection, function (item) {
+    this.modules.forEach(function (module) {
+      var collectionlist = module.collection.map(function (item) {
         return {
           orderBy: module.orderBy(item),
           html: module.render(item)
@@ -735,24 +462,26 @@ _.extend(Controller.prototype, {
   }
 
   , _orderList: function (list) {
-    return _.sortBy(list, function (o) {
-      return o.orderBy
+    return list.sort(function (x, y) {
+      var a = x.orderBy;
+      var b = y.orderBy;
+      if (a > b || a === void 0) return 1;
+      if (a <= b || b === void 0) return -1;
     });
   }
 
 
 });
-},{"events":2,"util":1,"./utils":7}],6:[function(require,module,exports){
+},{"events":10,"./utils":5}],4:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 };
-inherits(SocialBase, EventEmitter);
+_.inherits(SocialBase, EventEmitter);
 
 SocialBase.extend = function (protoProps, staticProps) {
   var parent = this;
@@ -842,37 +571,44 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-},{"events":2,"util":1,"./utils":7}],4:[function(require,module,exports){
-var vent = require('./events')
+},{"events":10,"./utils":5}],6:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
   ;
 
-var API = module.exports = function (controller) {
-};
+module.exports = SocialBase.extend({
 
-API.prototype = {
-
-  start: function () {
-    this.c.emit('start');
-    return this;
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
   }
 
-  , reload: function () {
-    this.c.emit('reload');
-    return this;
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
   }
 
-  , addModule: function (module) {
-    this.c.emit('addModule', module);
-    return this;
+  , parse: function (resp) {
+    return resp.response;
   }
 
-  , on: function (eventType, cb) {
-    this.c.on(eventType, cb);
-    return this;
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
   }
 
-};
-},{"./events":12}],8:[function(require,module,exports){
+  , render: function (item) {
+    return templateHtml
+                      .replace('{{author.profileUrl}}', item.author.profileUrl)
+                      .replace('{{author.name}}', item.author.name)
+                      .replace('{{createdAt}}', item.createdAt)
+                      .replace('{{time_since}}', _.timesince(item.createdAt))
+                      .replace('{{message}}', item.message);
+                   
+    return $html;
+  }
+
+});
+},{"../basemodule":4,"../resources":11,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -928,7 +664,7 @@ module.exports = SocialBase.extend({
       var $ul = $html.find('.socialfeed-commit-list')
         , $li = $ul.find('li:first');
 
-      _.each(item.payload.commits, function(commit) {
+      item.payload.commits.forEach(function(commit) {
         var $it = $li.clone();
 
         $it.find('a').attr('href', commit.url).text(commit.sha.substr(0, 7));
@@ -973,45 +709,10 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":6,"../resources":13,"../utils":7}],9:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
-  ;
-
-module.exports = SocialBase.extend({
-
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
-  }
-
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
-  }
-
-  , parse: function (resp) {
-    return resp.response;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
-  }
-
-});
-},{"../basemodule":6,"../resources":13}],10:[function(require,module,exports){
+},{"../basemodule":4,"../resources":11,"../utils":5}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
+  , _ = require('../utils')
   ;
 
 module.exports = SocialBase.extend({
@@ -1034,12 +735,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":6,"../resources":13}],12:[function(require,module,exports){
-var EventEmitter = require('events').EventEmitter
-  ;
-
-module.exports = new EventEmitter();
-},{"events":2}],13:[function(require,module,exports){
+},{"../basemodule":4,"../resources":11,"../utils":5}],11:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {
@@ -1054,5 +750,5 @@ module.exports = {
 	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{{profileUrl}}\">{{username}}</a> starred <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
 
 };
-},{}]},{},[3])
+},{}]},{},[1])
 ;

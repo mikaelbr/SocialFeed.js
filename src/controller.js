@@ -1,6 +1,5 @@
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , inherits = require('util').inherits
   ;
 
 var Controller = module.exports = function ($el) {
@@ -10,26 +9,25 @@ var Controller = module.exports = function ($el) {
   this.$el = $el || null;
 
   this.on('start', _.bind(this.start, this));
-  this.on('reload', _.bind(this.reload, this));
-  this.on('addModule', _.bind(this.addModule, this));
-  this.on('synced', _.bind(this.render, this));
+  this.on('reload', _.bind(this.reload));
+  this.on('addModule', _.bind(this.addModule));
+  this.on('synced', _.bind(this.render));
 };
-inherits(Controller, EventEmitter);
+_.inherits(Controller, EventEmitter);
 
 _.extend(Controller.prototype, {
-  _sync_count: 0,
+  _sync_count: 0
 
-  addModule: function (module) {
+  , addModule: function (module) {
     this.modules.push(module);
     this.emit('moduleAdded', module);
   }
 
   , start: function () {
     var controller = this;
-    _.bindAll(controller);
-    _.each(this.modules, function (module) {
+    controller.modules.forEach(function (module) {
       module.fetch();
-      module.on('fetched', controller.moduleFetched);
+      module.on('fetched', _.bind(controller.moduleFetched, controller));
       module.on('error', function () { 
         controller.emit.apply(controller, ['error'].concat(arguments));
       });
@@ -48,7 +46,7 @@ _.extend(Controller.prototype, {
   , reload: function () {
     this.$el.empty();
     this.emit('preFetch');
-    _.each(this.modules, function (module) {
+    this.modules.forEach(function (module) {
       module.fetch();
     });
   }
@@ -58,7 +56,7 @@ _.extend(Controller.prototype, {
       , list = this._generateOrderedList()
       ;
 
-    _.each(list, function (item) {
+    list.forEach(function (item) {
       $el.append(item.html);
     });
     this.emit('rendered', list)
@@ -67,8 +65,8 @@ _.extend(Controller.prototype, {
 
   , _generateOrderedList: function () {
     var list = [];
-    _.each(this.modules, function (module) {
-      var collectionlist = _.map(module.collection, function (item) {
+    this.modules.forEach(function (module) {
+      var collectionlist = module.collection.map(function (item) {
         return {
           orderBy: module.orderBy(item),
           html: module.render(item)
@@ -81,8 +79,11 @@ _.extend(Controller.prototype, {
   }
 
   , _orderList: function (list) {
-    return _.sortBy(list, function (o) {
-      return o.orderBy
+    return list.sort(function (x, y) {
+      var a = x.orderBy;
+      var b = y.orderBy;
+      if (a > b || a === void 0) return 1;
+      if (a <= b || b === void 0) return -1;
     });
   }
 

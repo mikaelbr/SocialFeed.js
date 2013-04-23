@@ -1,6 +1,3 @@
-var vent = require('./events')
-  ;
-
 var API = module.exports = function (controller) {
 };
 

@@ -1,0 +1,89 @@
+<html>
+<head>
+  <title>SocialFeed.js: Loading Indicator</title>
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="../../build/socialfeed.min.css">
+
+  <style>
+    body {
+      background: #3f4c6b; /* Old browsers */
+      background: -moz-radial-gradient(center, ellipse cover,  #3f4c6b 0%, #3f4c6b 100%); /* FF3.6+ */
+      background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,#3f4c6b), color-stop(100%,#3f4c6b)); /* Chrome,Safari4+ */
+      background: -webkit-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* Chrome10+,Safari5.1+ */
+      background: -o-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* Opera 12+ */
+      background: -ms-radial-gradient(center, ellipse cover,  #3f4c6b 0%,#3f4c6b 100%); /* IE10+ */
+      background: radial-gradient(ellipse at center,  #3f4c6b 0%,#3f4c6b 100%); /* W3C */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f4c6b', endColorstr='#3f4c6b',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+      color: #f9f9f9;
+    }
+
+    a:link, a:visited {
+      color: #33D5F5;
+      text-decoration: none;
+      transition: 500ms;
+    }
+
+    a:hover, a:active {
+      color: #0CAAC9;
+    }
+
+    .info p { 
+      width: 600px; 
+      margin: 10px auto;
+    }
+
+    .example-wrapper {
+      position: relative;
+      min-height: 150px;
+    }
+
+    .loading {
+      background: rgba(0,0,0, 0.7);
+      border-radius: 5px;
+      padding: 20px;
+
+      position: absolute;
+      z-index: 999;
+      width: 200px;
+      left: 50%;
+      margin-left: -120px;
+      text-align: center;
+
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="info">
+    <p>Example with SocialFeed.js and a loading indicator.</p>
+  </div>
+
+  <div class="example-wrapper">
+    <p class="loading">
+      <i class="icon-refresh icon-spin"></i>
+      Loading...
+    </p>
+    <div id="socialfeed" class="socialfeed-container">
+
+    </div>
+  </div>
+
+  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../build/socialfeed.js"></script>
+  <script>
+    new SocialFeed($('#socialfeed'))
+    .addModule(new SocialFeed.Modules.Github('mikaelbr'))
+    .on('preFetch', function (htmlList, modules) {
+      console.log('preFetch');
+      $('.loading').show();
+    })
+    .on('postFetch', function (htmlList, modules) {
+      console.log('postFetch');
+      $('.loading').hide();
+    })
+    .start();
+  </script>
+</body>
+</html>

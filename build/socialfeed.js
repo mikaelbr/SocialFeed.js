@@ -430,6 +430,7 @@ _.extend(Controller.prototype, {
 
   , start: function () {
     var controller = this;
+    controller.emit('preFetch');
     controller.modules.forEach(function (module) {
       module.fetch();
       module.on('fetched', _.bind(controller.moduleFetched, controller));
@@ -660,7 +661,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],7:[function(require,module,exports){
+},{"../resources":12,"../basemodule":4,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')

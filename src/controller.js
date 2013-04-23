@@ -31,6 +31,7 @@ _.extend(Controller.prototype, {
 
   , start: function () {
     var controller = this;
+    controller.emit('preFetch');
     controller.modules.forEach(function (module) {
       module.fetch();
       module.on('fetched', _.bind(controller.moduleFetched, controller));

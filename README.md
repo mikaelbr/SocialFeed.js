@@ -72,12 +72,14 @@ var sfeed = new SocialFeed($("#socialfeed"))
 
 #### Built in Modules
 
+Every built in module is under the namespace ```SocialFeed.Modules```.
+
 | Module        | Description           |
 | ------------- | ----------------------|
-| ```SocialFeed.Modules.Github(username)``` | Shows all your actions on github, including create repositories, starring, forking, pull requesting, pushing. |
-| ```SocialFeed.Modules.YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
-| ```SocialFeed.Modules.Disqus(username, public_api_key)``` | Show your public comments. |
-| ```SocialFeed.Modules.Delicious(username)``` | Shows your shared bookmarks. |
+| ```Github(username[, hideEvents = None])``` | Shows all your events on github, including create repositories, starring, forking, pull requesting, pushing. |
+| ```YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
+| ```Disqus(username, public_api_key)``` | Show your public comments made on Disqus. |
+| ```Delicious(username)``` | Shows your shared bookmarks. |
 
 
 ## API

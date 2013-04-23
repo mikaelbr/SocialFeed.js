@@ -15,12 +15,13 @@ target.all = function () {
   target.bundle(function () {
     target.less(function () {
       target.minify();
+      console.log('Bundle complete...')
     });
   });
 };
 
 target.bundle = function (cb) {
-  console.log('Bundle');
+  console.log('Starting bundling');
   bundleResources('src/moduletemplates/', 'src/resources.js');
   bundle(cb);
 };
@@ -42,13 +43,14 @@ target.less = function (cb) {
     var css = tree.toCSS()
       , minified = tree.toCSS({ compress: true });
     css.to('build/socialfeed.css');
-    console.log('Minifing CSS');
+    console.log('Minifying CSS');
     minified.to('build/socialfeed.min.css');
+    cb();
   });
 };
 
 target.minify = function () {
-  console.log('Minifying...');
+  console.log('Minifying JavaScript...');
   UglifyJS.minify(buildPath).code.to(minifiedPath)
   console.log('Minfying succeeded.');
 };
@@ -80,7 +82,6 @@ function bundle(cb) {
     if (err) return console.error(err);
 
     src.to(buildPath);
-    console.log('Build succeeded, open index.html to see the result.');
     cb();
   });
 }

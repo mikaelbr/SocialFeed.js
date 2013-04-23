@@ -7,6 +7,6 @@ resources:
 	node make resources
 
 bundle:
-	node make
+	node make all
 
 .PHONY: deps bundle

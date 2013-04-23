@@ -5,9 +5,9 @@ var API = require('./api')
   , _ = require('./utils')
   ;
 
-var SocialFeed = window.SocialFeed = function ($el) {
+var SocialFeed = window.SocialFeed = function (options) {
   if ( !(this instanceof SocialFeed) ) return new SocialFeed();
-  this.c = new Controller($el);
+  this.c = new Controller(options);
 };
 
 _.inherits(SocialFeed, API);

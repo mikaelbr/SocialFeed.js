@@ -2,16 +2,22 @@ var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
 
-var Controller = module.exports = function ($el) {
+var Controller = module.exports = function (options) {
   this.modules = [];
-  this.feedRendered = [];
+  this.feedRendered = null;
 
-  this.$el = $el || null;
+  this.$el = options.el || null;
+  this.count = options.count || 1000;
+  this._offset = options.offset || 0;
 
   this.on('start', _.bind(this.start, this));
   this.on('reload', _.bind(this.reload));
   this.on('addModule', _.bind(this.addModule));
-  this.on('synced', _.bind(this.render));
+  this.on('postFetch', _.bind(this.render));
+
+  // Paging
+  this.on('nextBulk', _.bind(this.nextBulk));
+  this.on('loadNumEntries', _.bind(this.loadNumEntries));
 };
 _.inherits(Controller, EventEmitter);
 
@@ -37,7 +43,6 @@ _.extend(Controller.prototype, {
   , moduleFetched: function (a, b, c) {
     if (++this._sync_count === this.modules.length) {
       // all done
-      this.emit('synced');
       this.emit('postFetch', this.modules);
       this._sync_count = 0;
     }
@@ -45,21 +50,44 @@ _.extend(Controller.prototype, {
 
   , reload: function () {
     this.$el.empty();
+    this._offset = 1;
+    this.feedRendered = null;
     this.emit('preFetch');
     this.modules.forEach(function (module) {
       module.fetch();
     });
   }
 
-  , render: function () {
-    var $el = this.$el
-      , list = this._generateOrderedList()
-      ;
+  , nextBulk: function () {
+    return this.loadNumEntries(this.count);
+  }
 
+  , loadNumEntries: function (num) {
+    if (this._offset >= this.feedRendered.length) {
+      return this;
+    }
+    var tmp = this.count;
+    this.count = num;
+    this.render();
+    this.count = tmp;
+    return this;
+  }
+
+  , render: function () {
+    var $el = this.$el;
+
+    if (this.feedRendered === null) {
+      this.feedRendered = this._generateOrderedList();
+      this.emit('synced', this.feedRendered, this.modules);
+    }
+
+    var list = this.feedRendered.slice(this._offset, (this._offset + this.count));
     list.forEach(function (item) {
       $el.append(item.html);
     });
-    this.emit('rendered', list)
+    this._offset += this.count;
+
+    this.emit('rendered', list);
     return this;
   }
 

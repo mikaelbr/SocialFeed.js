@@ -18,6 +18,16 @@ API.prototype = {
     return this;
   }
 
+  , nextBulk: function (page) {
+    this.c.emit('nextBulk');
+    return this;
+  }
+
+  , loadNumEntries: function (num) {
+    this.c.emit('loadNumEntries', num);
+    return this;
+  }
+
   , on: function (eventType, cb) {
     this.c.on(eventType, cb);
     return this;

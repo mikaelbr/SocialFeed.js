@@ -219,7 +219,7 @@ var sfeed = new SocialFeed($("#socialfeed"))
 
 ## Examples 
 
-See [examples](./examples/) for more code snippets and help.
+See [examples](https://github.com/mikaelbr/SocialFeed.js/tree/master/example) for more code snippets and help.
 
 
 ## Contribute

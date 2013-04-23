@@ -95,10 +95,18 @@ _.extend(Controller.prototype, {
     var list = [];
     this.modules.forEach(function (module) {
       var collectionlist = module.collection.map(function (item) {
+        var html = module.render(item);
+        if (!html) {
+          return null;
+        }
+
         return {
           orderBy: module.orderBy(item),
-          html: module.render(item)
+          html: html
         };
+      });
+      collectionlist = collectionlist.filter(function (item) {
+        return item !== null;
       });
       list = list.concat(collectionlist);
     });

@@ -7,6 +7,11 @@ var API = require('./api')
 
 var SocialFeed = window.SocialFeed = function (options) {
   if ( !(this instanceof SocialFeed) ) return new SocialFeed();
+  if (!options.el) {
+    options = {
+      el: options
+    };
+  }
   this.c = new Controller(options);
 };
 

@@ -9,6 +9,7 @@ SocialFeed.js was inspired by the compiled feed on http://gnab.org/, and was des
 At this moment the following social sites are supported:
 
 * Github
+* Youtube Video Uploads
 * Disqus
 * Delicious
 
@@ -68,6 +69,17 @@ var sfeed = new SocialFeed($("#socialfeed"))
                   .start();
 ```
 
+
+#### Built in Modules
+
+| Module        | Description           |
+| ------------- | ----------------------|
+| ```SocialFeed.Modules.Github(username)``` | Shows all your actions on github, including create repositories, starring, forking, pull requesting, pushing. |
+| ```SocialFeed.Modules.YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
+| ```SocialFeed.Modules.Disqus(username, public_api_key)``` | Show your public comments. |
+| ```SocialFeed.Modules.Delicious(username)``` | Shows your shared bookmarks. |
+
+
 ## API
 
 ```SocialFeed``` exposes several functions and events. 
@@ -77,10 +89,10 @@ var sfeed = new SocialFeed($("#socialfeed"))
 
 | Method        | Description           |
 | ------------- | ----------------------|
-| .start()      | Initiate SocialFeed.js. |
-| .reload()     | Reload content. Fetch new data from social channels. |
-| .addModule(Module) | Add a new module to the feed. |
-| .on(eventType, callback) | Listen for an event on the feed. See [Events](#events)|
+| ```.start()```      | Initiate SocialFeed.js. |
+| ```.reload()```     | Reload content. Fetch new data from social channels. |
+| ```.addModule(Module)``` | Add a new module to the feed. |
+| ```.on(eventType, callback)``` | Listen for an event on the feed. See [Events](#events)|
 
 ### Events
 
@@ -100,23 +112,23 @@ mod.on('eventName', function() { /* body */ });
 
 #### Events for a feed
 
-| Event Type    |  Passed arguments     | Description           |
-| ------------- | ----------------------| ----------------------|
-| start         | None | Triggered when ```.start()``` is called |
-| reload        | None | Triggered when ```.reload()``` is called |
-| moduleAdded   | AddedModule | Triggered when module is added |
-| preFetch      | None | Triggered before fetching data from modules. |
-| postFetch     | AllModels[] | Triggered when all modules are fetched |
-| rendered      | SortedHTMLList | Triggered after done rendering |
-| error         | Module, jqXHR, AjaxOptions | Triggered when error fetching some module data. |
+| Event Type       |  Passed arguments     | Description           |
+| ---------------- | ----------------------| ----------------------|
+| ```start```      | None | Triggered when ```.start()``` is called |
+| ```reload```     | None | Triggered when ```.reload()``` is called |
+| ```moduleAdded```| AddedModule | Triggered when module is added |
+| ```preFetch```   | None | Triggered before fetching data from modules. |
+| ```postFetch```  | AllModels[] | Triggered when all modules are fetched |
+| ```rendered```   | SortedHTMLList | Triggered after done rendering |
+| ```error```      | Module, jqXHR, AjaxOptions | Triggered when error fetching some module data. |
 
 
 #### Events for a module
 
 | Event Type    |  Passed arguments     | Description           |
 | ------------- | ----------------------| ----------------------|
-| error         |  Module, jqXHR, AjaxOptions | Triggered on error fetching module data. |
-| fetched       |  Module, jqXHR, AjaxOptions | Triggered when data for module is fetched. |
+| ```error```         |  Module, jqXHR, AjaxOptions | Triggered on error fetching module data. |
+| ```fetched```       |  Module, jqXHR, AjaxOptions | Triggered when data for module is fetched. |
 
 
 ## Expanding SocialFeed.js

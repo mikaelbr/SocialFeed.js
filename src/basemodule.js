@@ -41,10 +41,6 @@ SocialBase.extend = function (protoProps, staticProps) {
   return child;
 };
 
-var defaultAjaxSettings = {
-    dataType: 'jsonp'
-};
-
 SocialBase.fetch = function (options) {
   return $.ajax(options);
 };
@@ -53,7 +49,11 @@ var root = window;
 
 _.extend(SocialBase.prototype, {
 
-  init: function (ident) { 
+  ajaxSettings: {
+    dataType: 'jsonp'
+  }
+
+  , init: function (ident) { 
     this.ident = ident;
 
     this.$ = root.jQuery || root.Zepto || root.ender || root.$;
@@ -84,7 +84,7 @@ _.extend(SocialBase.prototype, {
       module.emit('error', module, resp, options);
     };
 
-    return SocialBase.fetch(_.extend(defaultAjaxSettings, options));
+    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
   }
 
   , parse: function (resp) { 

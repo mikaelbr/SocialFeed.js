@@ -25,6 +25,10 @@ target.bundle = function (cb) {
   bundle(cb);
 };
 
+target.resources = function () {
+  bundleResources('src/moduletemplates/', 'src/resources.js');
+};
+
 target.less = function (cb) {
   console.log('Compiling LESS');
   var data = cat('src/style.less');

@@ -21,8 +21,22 @@ var templateHelper = function (template, item) {
             .replace('{{created_at}}', item.created_at);
 };
 
+var defaultVisibility = {
+    'CreateEvent': true
+  , 'WatchEvent': true
+  , 'PushEvent': true
+  , 'PullRequestEvent': true
+  , 'ForkEvent': true
+  , 'IssuesEvent': true
+};
+
 module.exports = SocialBase.extend({
-  url: function () {
+  init: function (ident, showEntities) {
+    this.ident = ident;
+    this.show = _.extend(defaultVisibility, showEntities);
+  }
+
+  , url: function () {
     return 'https://api.github.com/users/' + this.ident + '/events';
   }
 
@@ -92,9 +106,11 @@ module.exports = SocialBase.extend({
   }
 
   , render: function (item) {
-    if (item.type && this.renderMethods[item.type]) {
+    if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    }
+    } 
+
+    return null;
   }
 
 });

@@ -24,7 +24,7 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
+},{"./controller":2,"./api":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],3:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -391,7 +391,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":10}],3:[function(require,module,exports){
+},{"__browserify_process":10}],2:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -472,7 +472,7 @@ _.extend(Controller.prototype, {
 
     if (this.feedRendered === null) {
       this.feedRendered = this._generateOrderedList();
-      this.emit('synced', this.feedRendered, this.modules);
+      this.emit('dataReady', this.feedRendered, this.modules);
     }
 
     var list = this.feedRendered.slice(this._offset, (this._offset + this.count));
@@ -489,10 +489,18 @@ _.extend(Controller.prototype, {
     var list = [];
     this.modules.forEach(function (module) {
       var collectionlist = module.collection.map(function (item) {
+        var html = module.render(item);
+        if (!html) {
+          return null;
+        }
+
         return {
           orderBy: module.orderBy(item),
-          html: module.render(item)
+          html: html
         };
+      });
+      collectionlist = collectionlist.filter(function (item) {
+        return item !== null;
       });
       list = list.concat(collectionlist);
     });
@@ -647,7 +655,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],7:[function(require,module,exports){
+},{"../resources":12,"../basemodule":4,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -671,8 +679,22 @@ var templateHelper = function (template, item) {
             .replace('{{created_at}}', item.created_at);
 };
 
+var defaultVisibility = {
+    'CreateEvent': true
+  , 'WatchEvent': true
+  , 'PushEvent': true
+  , 'PullRequestEvent': true
+  , 'ForkEvent': true
+  , 'IssuesEvent': true
+};
+
 module.exports = SocialBase.extend({
-  url: function () {
+  init: function (ident, showEntities) {
+    this.ident = ident;
+    this.show = _.extend(defaultVisibility, showEntities);
+  }
+
+  , url: function () {
     return 'https://api.github.com/users/' + this.ident + '/events';
   }
 
@@ -742,9 +764,11 @@ module.exports = SocialBase.extend({
   }
 
   , render: function (item) {
-    if (item.type && this.renderMethods[item.type]) {
+    if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    }
+    } 
+
+    return null;
   }
 
 });

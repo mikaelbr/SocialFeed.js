@@ -45,7 +45,9 @@
                     , count: 10
                   })
                   .addModule(new SocialFeed.Modules.Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
-                  .addModule(new SocialFeed.Modules.Github('mikaelbr'))
+                  .addModule(new SocialFeed.Modules.Github('mikaelbr', {
+                    'IssuesEvent': false
+                  }))
                   .addModule(new SocialFeed.Modules.Delicious('mikaelbr'))
                   .addModule(new SocialFeed.Modules.YouTubeUploads('nettutsplus'))
                   .start();

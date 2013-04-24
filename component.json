@@ -5,6 +5,9 @@
     "**/.*",
     "src",
     "spec",
+    "Makefile",
+    "make.js",
+    "package.json",
     "node_modules",
     "components"
   ],

@@ -41,7 +41,7 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
+},{"./api":2,"./basemodule":3,"./controller":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -411,6 +411,214 @@ EventEmitter.prototype.listeners = function(type) {
 },{"__browserify_process":10}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
+  , jsonp = require('./vendor/jquery-jsonp')
+  ;
+
+var SocialBase = module.exports = function () {
+  this.collection = [];
+  this.init.apply(this, arguments);
+};
+_.inherits(SocialBase, EventEmitter);
+
+SocialBase.extend = function (protoProps, staticProps) {
+  var parent = this;
+  var child;
+
+  // The constructor function for the new subclass is either defined by you
+  // (the "constructor" property in your `extend` definition), or defaulted
+  // by us to simply call the parent's constructor.
+  if (protoProps && _.has(protoProps, 'constructor')) {
+    child = protoProps.constructor;
+  } else {
+    child = function(){ return parent.apply(this, arguments); };
+  }
+
+  // Add static properties to the constructor function, if supplied.
+  _.extend(child, parent, staticProps);
+
+  // Set the prototype chain to inherit from `parent`, without calling
+  // `parent`'s constructor function.
+  var Surrogate = function(){ this.constructor = child; };
+  Surrogate.prototype = parent.prototype;
+  child.prototype = new Surrogate;
+
+  // Add prototype properties (instance properties) to the subclass,
+  // if supplied.
+  if (protoProps) _.extend(child.prototype, protoProps);
+
+  // Set a convenience property in case the parent's prototype is needed
+  // later.
+  child.__super__ = parent.prototype;
+
+  return child;
+};
+
+SocialBase.fetch = function (options) {
+  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
+    options.callbackParameter = options.callbackParameter || "callback";
+    return jsonp(options);
+  }
+  return $.ajax(options);
+};
+
+var root = window;
+
+_.extend(SocialBase.prototype, {
+
+  ajaxSettings: {
+    dataType: 'jsonp',
+    type: 'GET'
+  }
+
+  , init: function (ident) { 
+    this.ident = ident;
+
+    this.$ = root.jQuery || root.Zepto || root.ender || root.$;
+
+    if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
+  }
+  
+  , fetch: function (options) {
+    options = options ? _.clone(options) : {};
+
+    var url = _.result(this, 'url')
+      , module = this
+      , success = options.success
+      ;
+
+    options.url = url;
+    options.success = function(resp) {
+      var parsed = module.parse(resp);
+
+      module.collection = parsed;
+      if (success) success(module, parsed, options);
+      module.emit('fetched', module, parsed, options);
+    };
+
+    var error = options.error;
+    options.error = function(xOptions, textStatus) {
+      if (error) error(module, textStatus, xOptions);
+      module.emit('error', module, textStatus, xOptions);
+    };
+
+    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
+  }
+
+  , parse: function (resp) { 
+    return resp;
+  }
+
+  , orderBy: function (item) {  }
+
+  , render: function (item) {  }
+
+});
+},{"events":11,"./vendor/jquery-jsonp":"O7kHmp","./utils":5}],6:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
+  }
+
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  }
+
+  , parse: function (resp) {
+    return resp.response;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
+  }
+
+  , render: function (item) {
+    return templateHtml
+                      .replace('{{author.profileUrl}}', item.author.profileUrl)
+                      .replace('{{author.name}}', item.author.name)
+                      .replace('{{createdAt}}', item.createdAt)
+                      .replace('{{time_since}}', _.timesince(item.createdAt))
+                      .replace('{{message}}', item.message);
+                   
+    return $html;
+  }
+
+});
+},{"../basemodule":3,"../resources":12,"../utils":5}],8:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').youtubeuploads
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  ajaxSettings: {
+    cache: true,
+    dataType: 'jsonp'
+  }
+
+  , init: function (ident, maxCount) {
+    this.ident = ident;
+    this.maxCount = maxCount || 10;
+  }
+
+  , url: function () {
+    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
+  }
+
+  , parse: function (resp) {
+    var feed = resp.feed;
+    return feed.entry || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.updated.$t)).getTime();
+  }
+
+  , hideAndMakeYoutubeClickable: function (item, html) {
+
+    var $html = $(html)
+      , $iframe = $html.find('iframe')
+      , thumbnail = item['media$group']['media$thumbnail'][0].url
+      ;
+
+    var $img = $('<img />', {
+      src: thumbnail,
+      'class': 'youtube-preview'
+    }).insertAfter($iframe).on('click', function () {
+      $iframe.insertAfter($img);
+      $img.remove();
+    });
+    $iframe.remove();
+
+    return $html;
+  }
+
+  , render: function (item) {
+
+    var html = templateHtml
+              .replace('{{profileurl}}', item.author[0].uri.$t)
+              .replace('{{username}}', item.author[0].name.$t)
+              .replace('{{videourl}}', item.link[0].href)
+              .replace('{{videoname}}', item.title.$t)
+              .replace('{{created_at}}', item.updated.$t)
+              .replace('{{time_since}}', _.timesince(item.updated.$t))
+              .replace('{{entryid}}', item.id.$t.substring(38))
+              .replace('{{desc}}', item['media$group']['media$description'].$t);
+
+    return this.hideAndMakeYoutubeClickable(item, html);
+  }
+
+});
+},{"../basemodule":3,"../resources":12,"../utils":5}],4:[function(require,module,exports){
+var EventEmitter = require('events').EventEmitter
+  , _ = require('./utils')
   ;
 
 var Controller = module.exports = function (options) {
@@ -540,150 +748,7 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":11,"./utils":5}],4:[function(require,module,exports){
-var EventEmitter = require('events').EventEmitter
-  , _ = require('./utils')
-  , jsonp = require('./vendor/jquery-jsonp')
-  ;
-
-var SocialBase = module.exports = function () {
-  this.collection = [];
-  this.init.apply(this, arguments);
-};
-_.inherits(SocialBase, EventEmitter);
-
-SocialBase.extend = function (protoProps, staticProps) {
-  var parent = this;
-  var child;
-
-  // The constructor function for the new subclass is either defined by you
-  // (the "constructor" property in your `extend` definition), or defaulted
-  // by us to simply call the parent's constructor.
-  if (protoProps && _.has(protoProps, 'constructor')) {
-    child = protoProps.constructor;
-  } else {
-    child = function(){ return parent.apply(this, arguments); };
-  }
-
-  // Add static properties to the constructor function, if supplied.
-  _.extend(child, parent, staticProps);
-
-  // Set the prototype chain to inherit from `parent`, without calling
-  // `parent`'s constructor function.
-  var Surrogate = function(){ this.constructor = child; };
-  Surrogate.prototype = parent.prototype;
-  child.prototype = new Surrogate;
-
-  // Add prototype properties (instance properties) to the subclass,
-  // if supplied.
-  if (protoProps) _.extend(child.prototype, protoProps);
-
-  // Set a convenience property in case the parent's prototype is needed
-  // later.
-  child.__super__ = parent.prototype;
-
-  return child;
-};
-
-SocialBase.fetch = function (options) {
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
-  }
-  return $.ajax(options);
-};
-
-var root = window;
-
-_.extend(SocialBase.prototype, {
-
-  ajaxSettings: {
-    dataType: 'jsonp',
-    type: 'GET'
-  }
-
-  , init: function (ident) { 
-    this.ident = ident;
-
-    this.$ = root.jQuery || root.Zepto || root.ender || root.$;
-
-    if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
-  }
-  
-  , fetch: function (options) {
-    options = options ? _.clone(options) : {};
-
-    var url = _.result(this, 'url')
-      , module = this
-      , success = options.success
-      ;
-
-    options.url = url;
-    options.success = function(resp) {
-      console.log('Her inne');
-      var parsed = module.parse(resp);
-
-      module.collection = parsed;
-      if (success) success(module, parsed, options);
-      module.emit('fetched', module, parsed, options);
-    };
-
-    var error = options.error;
-    options.error = function(xOptions, textStatus) {
-      if (error) error(module, textStatus, xOptions);
-      module.emit('error', module, textStatus, xOptions);
-    };
-
-    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
-  }
-
-  , parse: function (resp) { 
-    return resp;
-  }
-
-  , orderBy: function (item) {  }
-
-  , render: function (item) {  }
-
-});
-},{"events":11,"./utils":5,"./vendor/jquery-jsonp":"O7kHmp"}],6:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
-  }
-
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
-  }
-
-  , parse: function (resp) {
-    return resp.response;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
-  }
-
-});
-},{"../basemodule":4,"../resources":12,"../utils":5}],7:[function(require,module,exports){
+},{"events":11,"./utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -809,73 +874,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],8:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').youtubeuploads
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  ajaxSettings: {
-    cache: true,
-    dataType: 'jsonp'
-  }
-
-  , init: function (ident, maxCount) {
-    this.ident = ident;
-    this.maxCount = maxCount || 10;
-  }
-
-  , url: function () {
-    return 'http://gdata.youtube.zomiii/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
-  }
-
-  , parse: function (resp) {
-    var feed = resp.feed;
-    return feed.entry || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.updated.$t)).getTime();
-  }
-
-  , hideAndMakeYoutubeClickable: function (item, html) {
-
-    var $html = $(html)
-      , $iframe = $html.find('iframe')
-      , thumbnail = item['media$group']['media$thumbnail'][0].url
-      ;
-
-    var $img = $('<img />', {
-      src: thumbnail,
-      'class': 'youtube-preview'
-    }).insertAfter($iframe).on('click', function () {
-      $iframe.insertAfter($img);
-      $img.remove();
-    });
-    $iframe.remove();
-
-    return $html;
-  }
-
-  , render: function (item) {
-
-    var html = templateHtml
-              .replace('{{profileurl}}', item.author[0].uri.$t)
-              .replace('{{username}}', item.author[0].name.$t)
-              .replace('{{videourl}}', item.link[0].href)
-              .replace('{{videoname}}', item.title.$t)
-              .replace('{{created_at}}', item.updated.$t)
-              .replace('{{time_since}}', _.timesince(item.updated.$t))
-              .replace('{{entryid}}', item.id.$t.substring(38))
-              .replace('{{desc}}', item['media$group']['media$description'].$t);
-
-    return this.hideAndMakeYoutubeClickable(item, html);
-  }
-
-});
-},{"../basemodule":4,"../resources":12,"../utils":5}],9:[function(require,module,exports){
+},{"../basemodule":3,"../resources":12,"../utils":5}],9:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   , _ = require('../utils')
@@ -901,7 +900,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],12:[function(require,module,exports){
+},{"../basemodule":3,"../resources":12,"../utils":5}],12:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {

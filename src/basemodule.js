@@ -77,7 +77,6 @@ _.extend(SocialBase.prototype, {
 
     options.url = url;
     options.success = function(resp) {
-      console.log('Her inne');
       var parsed = module.parse(resp);
 
       module.collection = parsed;

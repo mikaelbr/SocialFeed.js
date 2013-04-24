@@ -1,5 +1,6 @@
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
+  , jsonp = require('./vendor/jquery-jsonp')
   ;
 
 var SocialBase = module.exports = function () {
@@ -42,6 +43,10 @@ SocialBase.extend = function (protoProps, staticProps) {
 };
 
 SocialBase.fetch = function (options) {
+  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
+    options.callbackParameter = options.callbackParameter || "callback";
+    return jsonp(options);
+  }
   return $.ajax(options);
 };
 
@@ -50,7 +55,8 @@ var root = window;
 _.extend(SocialBase.prototype, {
 
   ajaxSettings: {
-    dataType: 'jsonp'
+    dataType: 'jsonp',
+    type: 'GET'
   }
 
   , init: function (ident) { 
@@ -71,6 +77,7 @@ _.extend(SocialBase.prototype, {
 
     options.url = url;
     options.success = function(resp) {
+      console.log('Her inne');
       var parsed = module.parse(resp);
 
       module.collection = parsed;
@@ -79,9 +86,9 @@ _.extend(SocialBase.prototype, {
     };
 
     var error = options.error;
-    options.error = function(resp) {
-      if (error) error(module, resp, options);
-      module.emit('error', module, resp, options);
+    options.error = function(xOptions, textStatus) {
+      if (error) error(module, textStatus, xOptions);
+      module.emit('error', module, textStatus, xOptions);
     };
 
     return SocialBase.fetch(_.extend(this.ajaxSettings, options));

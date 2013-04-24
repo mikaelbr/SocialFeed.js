@@ -36,7 +36,10 @@ _.extend(Controller.prototype, {
       module.fetch();
       module.on('fetched', _.bind(controller.moduleFetched, controller));
       module.on('error', function () { 
-        controller.emit.apply(controller, ['error'].concat(arguments));
+        if (controller.listeners('error').length > 0) {
+          controller.emit.apply(controller, ['error'].concat(arguments));
+        }
+        controller.moduleFetched();
       });
     });
   }

@@ -4,6 +4,7 @@ require('shelljs/global');
 var fs      = require('fs')
   , path = require('path')
   , browserify = require('browserify')
+  , shim = require('browserify-shim')
   , UglifyJS = require("uglify-js")
   , less = require('less')
   ;
@@ -76,7 +77,10 @@ function bundleResources (source, target) {
 function bundle(cb) {
   cb = cb || function () {};
 
-  browserify()
+  shim(browserify(), {
+    // jQuery attaches itself to the window as '$' so we assign the exports accordingly
+    jquery: { path: './src/vendor/jquery-jsonp.js', exports: '$.jsonp' }
+  })
   .require(require.resolve('./src/socialfeed.js'), { entry: true })
   .bundle(function (err, src) {
     if (err) return console.error(err);

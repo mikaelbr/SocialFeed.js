@@ -3,6 +3,8 @@
   "version": "0.3.1",
   "ignore": [
     "**/.*",
+    "src",
+    "spec",
     "node_modules",
     "components"
   ],

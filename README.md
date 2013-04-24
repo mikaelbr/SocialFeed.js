@@ -24,8 +24,15 @@ However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#
 
 ### Install
 
+#### Manually Download
 Installing SocialFeed.js is simple. Just download the raw [JavaScript file](https://raw.github.com/mikaelbr/SocialFeed.js/master/build/socialfeed.min.js) and
 optionally the [CSS file](https://raw.github.com/mikaelbr/SocialFeed.js/master/build/socialfeed.min.css).
+
+#### Using Bower
+
+```
+bower install socialfeed
+```
 
 Import all dependancies and the SocialFeed.js code.
 
@@ -39,7 +46,7 @@ Import all dependancies and the SocialFeed.js code.
     <div id="socialfeed"></div>
     <!-- Import Scripts -->
     <script src="components/jquery/jquery.js"></script>
-    <script src="build/socialfeed.min.js"></script>
+    <script src="components/socialfeed/build/socialfeed.min.js"></script>
   </body>
 </html>
 ```

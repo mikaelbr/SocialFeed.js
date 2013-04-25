@@ -6,7 +6,7 @@ SocialFeed.js was inspired by the compiled feed on http://gnab.org/, and was des
 
 ![SocialFeed.js](https://github.com/mikaelbr/SocialFeed.js/raw/master/screenshot.png "Screenshot of SocialFeed.js")
 
-At this moment the following social sites are supported:
+At this moment the following features:
 
 * Github
 * Youtube Video Uploads
@@ -16,6 +16,7 @@ At this moment the following social sites are supported:
 
 However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#expanding-socialfeedjs) for more information.
 
+See SocialFeed.js in use at my [personal site](http://mikaelb.net/).
 
 ## Installation & Usage
 

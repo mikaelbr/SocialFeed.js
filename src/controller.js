@@ -56,7 +56,7 @@ _.extend(Controller.prototype, {
 
   , reload: function () {
     this.$el.empty();
-    this._offset = 1;
+    this._offset = 0;
     this.feedRendered = null;
     this.start();
   }

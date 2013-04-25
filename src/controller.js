@@ -25,8 +25,17 @@ _.extend(Controller.prototype, {
   _sync_count: 0
 
   , addModule: function (module) {
+    var controller = this;
+
     this.modules.push(module);
     this.emit('moduleAdded', module);
+    module.on('fetched', _.bind(controller.moduleFetched, controller));
+    module.on('error', function () { 
+      if (controller.listeners('error').length > 0) {
+        controller.emit.apply(controller, ['error'].concat(arguments));
+      }
+      controller.moduleFetched();
+    });
   }
 
   , start: function () {
@@ -34,13 +43,6 @@ _.extend(Controller.prototype, {
     controller.emit('preFetch');
     controller.modules.forEach(function (module) {
       module.fetch();
-      module.on('fetched', _.bind(controller.moduleFetched, controller));
-      module.on('error', function () { 
-        if (controller.listeners('error').length > 0) {
-          controller.emit.apply(controller, ['error'].concat(arguments));
-        }
-        controller.moduleFetched();
-      });
     });
   }
 
@@ -56,10 +58,7 @@ _.extend(Controller.prototype, {
     this.$el.empty();
     this._offset = 1;
     this.feedRendered = null;
-    this.emit('preFetch');
-    this.modules.forEach(function (module) {
-      module.fetch();
-    });
+    this.start();
   }
 
   , nextBulk: function () {

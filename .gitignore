@@ -1,6 +1,8 @@
 node_modules/
 components/
 
+example/RequireJS/dist
+
 .DS_Store
 npm-debug.log
 tmp

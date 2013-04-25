@@ -1,0 +1,1 @@
+r.js -o app/scripts/app.build.js

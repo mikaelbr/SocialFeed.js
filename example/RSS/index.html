@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RSS Example</title>
+  <link rel="stylesheet" type="text/css" href="../../socialfeed.min.css">
+
+  <style>
+    p { width: 600px; margin: 10px auto;}
+  </style>
+</head>
+<body>
+
+  <p>Showing the ten latest blog posts of <a href="http://webdesignerwall.com">Web Designer Wall</a></p>
+  <p>This uses Google APIs to convert RSS/XML to JSON.</p>
+
+  <ol id="socialfeed" class="socialfeed-container"></ol>
+
+  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../socialfeed.js"></script>
+  <script>
+
+    ;(function () {
+      var rssUrl = 'http://feeds2.feedburner.com/WebDesignerWall';
+      var sfeed1 = new SocialFeed({
+            el: $('#socialfeed')
+        })
+        .addModule(new SocialFeed.Modules.RSS(rssUrl))
+        .start();
+    })();
+    
+  </script>
+</body>
+</html>

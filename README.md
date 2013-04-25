@@ -11,6 +11,7 @@ At this moment the following social sites are supported:
 * Github
 * Youtube Video Uploads
 * Disqus
+* RSS Feeds
 * Delicious
 
 However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#expanding-socialfeedjs) for more information.
@@ -108,6 +109,7 @@ Every built in module is under the namespace ```SocialFeed.Modules```.
 | ```YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
 | ```Disqus(username, public_api_key)``` | Show your public comments made on Disqus. |
 | ```Delicious(username)``` | Shows your shared bookmarks. |
+| ```Delicious(rssUrl, count)``` | Fetches the ```count``` number of posts from your RSS feed at ```rssUrl``` |
 
 
 ## API

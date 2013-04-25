@@ -36,12 +36,13 @@ window.SocialFeed.Modules = {
   , Github: require('./modules/github')
   , YouTubeUploads: require('./modules/youtubeuploads')
   , Delicious: require('./modules/delicious')
+  , RSS: require('./modules/rss')
   , SocialBase: SocialBase
   , extend: function (module) {
     return SocialBase.extend(module);
   }
 };
-},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
+},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9,"./modules/rss":10}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -280,7 +281,7 @@ if (!Array.prototype.filter) {
     };
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -334,7 +335,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -520,7 +521,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":10}],3:[function(require,module,exports){
+},{"__browserify_process":11}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -651,7 +652,7 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":11,"./utils":5}],4:[function(require,module,exports){
+},{"events":12,"./utils":5}],4:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   , jsonp = require('./vendor/jquery-jsonp')
@@ -750,7 +751,7 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-},{"events":11,"./vendor/jquery-jsonp":"O7kHmp","./utils":5}],6:[function(require,module,exports){
+},{"events":12,"./utils":5,"./vendor/jquery-jsonp":"O7kHmp"}],6:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').disqus
   , _ = require('../utils')
@@ -787,7 +788,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],7:[function(require,module,exports){
+},{"../basemodule":4,"../resources":13,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -913,7 +914,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],8:[function(require,module,exports){
+},{"../basemodule":4,"../resources":13,"../utils":5}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').youtubeuploads
   , _ = require('../utils')
@@ -979,7 +980,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],9:[function(require,module,exports){
+},{"../basemodule":4,"../resources":13,"../utils":5}],9:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   , _ = require('../utils')
@@ -1005,7 +1006,48 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":12,"../utils":5}],12:[function(require,module,exports){
+},{"../basemodule":4,"../resources":13,"../utils":5}],10:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').rss
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+  init: function (url, count) {
+    this.feedURL = url;
+    this.count = count || 10;
+  }
+
+  , url: function () {
+    // Use Google API feed service.
+    return 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + this.count + '&q=' + encodeURIComponent(this.feedURL);
+  }
+
+  , parse: function (resp) {
+    var feed = resp.responseData.feed;
+    if (!feed) {
+      return [];
+    }
+    this.blogname = feed.title;
+    this.blogurl = feed.link;
+    return feed.entries || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.publishedDate)).getTime();
+  }
+
+  , render: function (item) {
+    return templateHtml
+                  .replace('{{blogname}}', this.blogname)
+                  .replace('{{blogurl}}', this.blogurl)
+                  .replace('{{url}}', item.link)
+                  .replace('{{title}}', item.title)
+                  .replace('{{dt}}', item.publishedDate)
+                  .replace('{{time_since}}', _.timesince(item.publishedDate));
+  }
+});
+},{"../basemodule":4,"../resources":13,"../utils":5}],13:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {
@@ -1018,6 +1060,7 @@ module.exports = {
 	"github_pullrequest": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-pull-request\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} pull request <a href=\"{{pullrequesturl}}\">{{pullrequestname}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
 	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      pushed to <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{{commiturl}}\">{{commit}}</a>\n      <span>{{commit_message}}</span>\n    </li>\n  </ul>\n</div>",
 	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{{profileUrl}}\">{{username}}</a> starred <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
+	"rss": "<div class=\"socialfeed-item socialfeed-rss\">\n  <i class=\"socialfeed-icon icon-rss\"></i>\n  <header>\n    <h2>\n      New blog post at \n      <a href=\"{{blogurl}}\">{{blogname}}</a>\n    </h2>\n    <time datetime=\"{{dt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <a href=\"{{url}}\">{{title}}</a>\n  </div>\n</div>",
 	"youtubeuploads": "<div class=\"socialfeed-item socialfeed-youtube socialfeed-youtube-upload\">\n  <i class=\"socialfeed-icon icon-play-circle\"></i>\n  <header>\n    <h2><a href=\"{{profileurl}}\">{{username}}</a> added a video: <a href=\"{{videourl}}\">{{videoname}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <iframe class=\"youtube-preview\"\n      src=\"http://www.youtube.com/embed/{{entryid}}?wmode=transparent&amp;HD=0&amp;rel=0&amp;showinfo=0&amp;controls=1&amp;autoplay=1\" \n      frameborder=\"0\" \n      allowfullscreen>\n    </iframe>\n    <p>{{desc}}</p>\n  </div>\n</div>",
 
 };

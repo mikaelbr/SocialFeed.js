@@ -23,6 +23,7 @@ window.SocialFeed.Modules = {
   , Github: require('./modules/github')
   , YouTubeUploads: require('./modules/youtubeuploads')
   , Delicious: require('./modules/delicious')
+  , RSS: require('./modules/rss')
   , SocialBase: SocialBase
   , extend: function (module) {
     return SocialBase.extend(module);

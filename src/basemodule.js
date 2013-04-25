@@ -1,7 +1,9 @@
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , jsonp = require('./vendor/jquery-jsonp')
   ;
+
+// imports as global..
+require('./vendor/jquery-jsonp')
 
 var SocialBase = module.exports = function () {
   this.collection = [];
@@ -41,6 +43,7 @@ SocialBase.extend = function (protoProps) {
 /** // From Backbone */
 
 SocialBase.fetch = function (options) {
+  var jsonp = $.jsonp;
   if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
     options.callbackParameter = options.callbackParameter || "callback";
     return jsonp(options);

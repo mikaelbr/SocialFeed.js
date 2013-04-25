@@ -1,16 +1,4 @@
-require=(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({"jquery":[function(require,module,exports){
-module.exports=require('O7kHmp');
-},{}],"O7kHmp":[function(require,module,exports){
-(function(global){(function browserifyShim(module, define, browserify_shim__define__module__export__) {
-// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
-// https://github.com/jaubourg/jquery-jsonp
-(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
-; browserify_shim__define__module__export__(typeof $.jsonp != "undefined" ? $.jsonp : window.$.jsonp);
-
-}).call(global, undefined, undefined, function defineExport(ex) { module.exports = ex; });
-
-})(window)
-},{}],1:[function(require,module,exports){
+;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
 
 var API = require('./api')
   , Controller = require('./controller')
@@ -653,17 +641,19 @@ _.extend(Controller.prototype, {
 
 });
 },{"events":12,"./utils":5}],4:[function(require,module,exports){
-var EventEmitter = require('events').EventEmitter
+(function(){var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
-  , jsonp = require('./vendor/jquery-jsonp')
   ;
+
+// imports as global..
+require('./vendor/jquery-jsonp')
 
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 
-  this.$ = root.jQuery || root.Zepto || root.ender || root.$;
-  if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
+  this.$ = root.jQuery || root.Zepto || root.$;
+  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
 
@@ -696,6 +686,7 @@ SocialBase.extend = function (protoProps) {
 /** // From Backbone */
 
 SocialBase.fetch = function (options) {
+  var jsonp = $.jsonp;
   if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
     options.callbackParameter = options.callbackParameter || "callback";
     return jsonp(options);
@@ -751,7 +742,8 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-},{"events":12,"./utils":5,"./vendor/jquery-jsonp":"O7kHmp"}],6:[function(require,module,exports){
+})()
+},{"events":12,"./utils":5,"./vendor/jquery-jsonp":13}],6:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').disqus
   , _ = require('../utils')
@@ -788,7 +780,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":13,"../utils":5}],7:[function(require,module,exports){
+},{"../basemodule":4,"../utils":5,"../resources":14}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -914,7 +906,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":13,"../utils":5}],8:[function(require,module,exports){
+},{"../basemodule":4,"../resources":14,"../utils":5}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').youtubeuploads
   , _ = require('../utils')
@@ -980,7 +972,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":13,"../utils":5}],9:[function(require,module,exports){
+},{"../basemodule":4,"../resources":14,"../utils":5}],9:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   , _ = require('../utils')
@@ -1006,7 +998,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":13,"../utils":5}],10:[function(require,module,exports){
+},{"../basemodule":4,"../resources":14,"../utils":5}],10:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').rss
   , _ = require('../utils')
@@ -1047,7 +1039,11 @@ module.exports = SocialBase.extend({
                   .replace('{{time_since}}', _.timesince(item.publishedDate));
   }
 });
-},{"../basemodule":4,"../resources":13,"../utils":5}],13:[function(require,module,exports){
+},{"../basemodule":4,"../resources":14,"../utils":5}],13:[function(require,module,exports){
+// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
+// https://github.com/jaubourg/jquery-jsonp
+(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
+},{}],14:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {

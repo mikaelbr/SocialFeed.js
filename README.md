@@ -6,7 +6,7 @@ SocialFeed.js was inspired by the compiled feed on http://gnab.org/, and was des
 
 ![SocialFeed.js](https://github.com/mikaelbr/SocialFeed.js/raw/master/screenshot.png "Screenshot of SocialFeed.js")
 
-At this moment the following features:
+At this moment the following features are implemented:
 
 * Github
 * Youtube Video Uploads

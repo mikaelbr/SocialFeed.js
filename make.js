@@ -9,8 +9,8 @@ var fs      = require('fs')
   , less = require('less')
   ;
 
-var buildPath = path.join(__dirname, 'build/socialfeed.js')
-  , minifiedPath = path.join(__dirname, 'build/socialfeed.min.js');
+var buildPath = path.join(__dirname, 'socialfeed.js')
+  , minifiedPath = path.join(__dirname, 'socialfeed.min.js');
 
 target.all = function () {
   target.bundle(function () {
@@ -43,9 +43,9 @@ target.less = function (cb) {
   parser.parse(data, function (e, tree) {
     var css = tree.toCSS()
       , minified = tree.toCSS({ compress: true });
-    css.to('build/socialfeed.css');
+    css.to('socialfeed.css');
     console.log('Minifying CSS');
-    minified.to('build/socialfeed.min.css');
+    minified.to('socialfeed.min.css');
     cb();
   });
 };

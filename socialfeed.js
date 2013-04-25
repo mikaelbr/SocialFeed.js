@@ -520,106 +520,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":10}],4:[function(require,module,exports){
-var EventEmitter = require('events').EventEmitter
-  , _ = require('./utils')
-  , jsonp = require('./vendor/jquery-jsonp')
-  ;
-
-var SocialBase = module.exports = function () {
-  this.collection = [];
-  this.init.apply(this, arguments);
-
-  this.$ = root.jQuery || root.Zepto || root.ender || root.$;
-  if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
-};
-_.inherits(SocialBase, EventEmitter);
-
-/** 
-  Extend from Backbone 
-  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
-*/
-SocialBase.extend = function (protoProps) {
-  var parent = this
-    , child = function(){ 
-        return parent.apply(this, arguments); 
-      }
-    ;
-
-  _.extend(child, parent);
-
-  var Surrogate = function () { 
-    this.constructor = child; 
-  };
-
-  Surrogate.prototype = parent.prototype;
-  child.prototype = new Surrogate;
-  if (protoProps) {
-    _.extend(child.prototype, protoProps);
-  }
-  child.__super__ = parent.prototype;
-
-  return child;
-};
-/** // From Backbone */
-
-SocialBase.fetch = function (options) {
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
-  }
-  return $.ajax(options);
-};
-
-var root = window;
-
-_.extend(SocialBase.prototype, {
-
-  ajaxSettings: {
-    dataType: 'jsonp',
-    type: 'GET'
-  }
-
-  , init: function (ident) { 
-    this.ident = ident;
-  }
-  
-  , fetch: function (options) {
-    options = options ? _.clone(options) : {};
-
-    var url = _.result(this, 'url')
-      , module = this
-      , success = options.success
-      ;
-
-    options.url = url;
-    options.success = function(resp) {
-      var parsed = module.parse(resp);
-
-      module.collection = parsed;
-      if (success) success(module, parsed, options);
-      module.emit('fetched', module, parsed, options);
-    };
-
-    var error = options.error;
-    options.error = function(xOptions, textStatus) {
-      if (error) error(module, textStatus, xOptions);
-      module.emit('error', module, textStatus, xOptions);
-    };
-
-    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
-  }
-
-  , parse: function (resp) { 
-    return resp;
-  }
-
-  , orderBy: function (item) {  }
-
-  , render: function (item) {  }
-
-});
-},{"events":11,"./utils":5,"./vendor/jquery-jsonp":"O7kHmp"}],3:[function(require,module,exports){
+},{"__browserify_process":10}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -750,7 +651,106 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":11,"./utils":5}],6:[function(require,module,exports){
+},{"events":11,"./utils":5}],4:[function(require,module,exports){
+var EventEmitter = require('events').EventEmitter
+  , _ = require('./utils')
+  , jsonp = require('./vendor/jquery-jsonp')
+  ;
+
+var SocialBase = module.exports = function () {
+  this.collection = [];
+  this.init.apply(this, arguments);
+
+  this.$ = root.jQuery || root.Zepto || root.ender || root.$;
+  if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
+};
+_.inherits(SocialBase, EventEmitter);
+
+/** 
+  Extend from Backbone 
+  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
+*/
+SocialBase.extend = function (protoProps) {
+  var parent = this
+    , child = function(){ 
+        return parent.apply(this, arguments); 
+      }
+    ;
+
+  _.extend(child, parent);
+
+  var Surrogate = function () { 
+    this.constructor = child; 
+  };
+
+  Surrogate.prototype = parent.prototype;
+  child.prototype = new Surrogate;
+  if (protoProps) {
+    _.extend(child.prototype, protoProps);
+  }
+  child.__super__ = parent.prototype;
+
+  return child;
+};
+/** // From Backbone */
+
+SocialBase.fetch = function (options) {
+  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
+    options.callbackParameter = options.callbackParameter || "callback";
+    return jsonp(options);
+  }
+  return $.ajax(options);
+};
+
+var root = window;
+
+_.extend(SocialBase.prototype, {
+
+  ajaxSettings: {
+    dataType: 'jsonp',
+    type: 'GET'
+  }
+
+  , init: function (ident) { 
+    this.ident = ident;
+  }
+  
+  , fetch: function (options) {
+    options = options ? _.clone(options) : {};
+
+    var url = _.result(this, 'url')
+      , module = this
+      , success = options.success
+      ;
+
+    options.url = url;
+    options.success = function(resp) {
+      var parsed = module.parse(resp);
+
+      module.collection = parsed;
+      if (success) success(module, parsed, options);
+      module.emit('fetched', module, parsed, options);
+    };
+
+    var error = options.error;
+    options.error = function(xOptions, textStatus) {
+      if (error) error(module, textStatus, xOptions);
+      module.emit('error', module, textStatus, xOptions);
+    };
+
+    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
+  }
+
+  , parse: function (resp) { 
+    return resp;
+  }
+
+  , orderBy: function (item) {  }
+
+  , render: function (item) {  }
+
+});
+},{"events":11,"./vendor/jquery-jsonp":"O7kHmp","./utils":5}],6:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').disqus
   , _ = require('../utils')
@@ -913,7 +913,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../resources":12,"../basemodule":4,"../utils":5}],8:[function(require,module,exports){
+},{"../basemodule":4,"../resources":12,"../utils":5}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').youtubeuploads
   , _ = require('../utils')

@@ -25,8 +25,8 @@ However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#
 ### Install
 
 #### Manually Download
-Installing SocialFeed.js is simple. Just download the raw [JavaScript file](https://raw.github.com/mikaelbr/SocialFeed.js/master/build/socialfeed.min.js) and
-optionally the [CSS file](https://raw.github.com/mikaelbr/SocialFeed.js/master/build/socialfeed.min.css).
+Installing SocialFeed.js is simple. Just download the raw [JavaScript file](https://raw.github.com/mikaelbr/SocialFeed.js/master/socialfeed.min.js) and
+optionally the [CSS file](https://raw.github.com/mikaelbr/SocialFeed.js/master/socialfeed.min.css).
 
 #### Using Bower
 
@@ -40,13 +40,13 @@ Import all dependancies and the SocialFeed.js code.
 <html>
   <head>
     <title>SocialFeed.js</title>
-    <link rel="stylesheet" type="text/css" href="build/socialfeed.min.css">
+    <link rel="stylesheet" type="text/css" href="socialfeed.min.css">
   </head>
   <body>
     <div id="socialfeed"></div>
     <!-- Import Scripts -->
     <script src="components/jquery/jquery.js"></script>
-    <script src="components/socialfeed/build/socialfeed.min.js"></script>
+    <script src="components/socialfeed/socialfeed.min.js"></script>
   </body>
 </html>
 ```
@@ -260,4 +260,4 @@ From root, run
 make bundle
 ```
 
-This will build the JavaScript, compile LESS files and minify both. You can find the dist files in the ```dist``` directory.
+This will build the JavaScript, compile LESS files and minify both. You can find the bundled files in the root directory.

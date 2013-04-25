@@ -7,8 +7,8 @@ var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 
-  this.$ = root.jQuery || root.Zepto || root.ender || root.$;
-  if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
+  this.$ = root.jQuery || root.Zepto || root.$;
+  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
 

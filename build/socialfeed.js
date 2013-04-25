@@ -41,7 +41,7 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
-},{"./api":2,"./basemodule":3,"./controller":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
+},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -112,6 +112,10 @@ var isFunc = exports.isFunc = function (obj) {
   return Object.prototype.toString.call(obj) == '[object Function]';
 };
 
+var isString = exports.isString = function (obj) {
+  return Object.prototype.toString.call(obj) == "[object String]";
+};
+
 exports.result = function (object, property) {
   if (object == null) return;
   var value = object[property];
@@ -167,6 +171,114 @@ exports.inherits = function(ctor, superCtor) {
     }
   });
 };
+
+
+/*
+ * ECMAScript 5 Shims.
+ * Copyright 2009, 2010 Kristopher Michael Kowal. All rights reserved.
+ */ 
+
+// ES5 9.9
+// http://es5.github.com/#x9.9
+var toObject = function (o) {
+    if (o == null) { // this matches both null and undefined
+        throw new TypeError("can't convert "+o+" to object");
+    }
+    return Object(o);
+};
+
+
+// ES5 15.4.4.18
+// http://es5.github.com/#x15.4.4.18
+// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/array/forEach
+
+// Check failure of by-index access of string characters (IE < 9)
+// and failure of `0 in boxedString` (Rhino)
+var boxedString = Object("a"),
+    splitString = boxedString[0] != "a" || !(0 in boxedString);
+
+if (!Array.prototype.forEach) {
+  Array.prototype.forEach = function forEach(fun /*, thisp*/) {
+    var object = toObject(this),
+        self = splitString && isString(this) ?
+            this.split("") :
+            object,
+        thisp = arguments[1],
+        i = -1,
+        length = self.length >>> 0;
+
+    // If no callback function or if callback is not a callable function
+    if (!isFunc(fun)) {
+        throw new TypeError(); // TODO message
+    }
+
+    while (++i < length) {
+        if (i in self) {
+            // Invoke the callback function with call, passing arguments:
+            // context, property value, property key, thisArg object
+            // context
+            fun.call(thisp, self[i], i, object);
+        }
+    }
+  };
+}
+
+// ES5 15.4.4.19
+// http://es5.github.com/#x15.4.4.19
+// https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/map
+if (!Array.prototype.map) {
+    Array.prototype.map = function map(fun /*, thisp*/) {
+        var object = toObject(this),
+            self = splitString && _toString(this) == "[object String]" ?
+                this.split("") :
+                object,
+            length = self.length >>> 0,
+            result = Array(length),
+            thisp = arguments[1];
+
+        // If no callback function or if callback is not a callable function
+        if (_toString(fun) != "[object Function]") {
+            throw new TypeError(fun + " is not a function");
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (i in self)
+                result[i] = fun.call(thisp, self[i], i, object);
+        }
+        return result;
+    };
+}
+
+// ES5 15.4.4.20
+// http://es5.github.com/#x15.4.4.20
+// https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/filter
+if (!Array.prototype.filter) {
+    Array.prototype.filter = function filter(fun /*, thisp */) {
+        var object = toObject(this),
+            self = splitString && _toString(this) == "[object String]" ?
+                this.split("") :
+                    object,
+            length = self.length >>> 0,
+            result = [],
+            value,
+            thisp = arguments[1];
+
+        // If no callback function or if callback is not a callable function
+        if (_toString(fun) != "[object Function]") {
+            throw new TypeError(fun + " is not a function");
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (i in self) {
+                value = self[i];
+                if (fun.call(thisp, value, i, object)) {
+                    result.push(value);
+                }
+            }
+        }
+        return result;
+    };
+}
 
 },{}],10:[function(require,module,exports){
 // shim for using process in browser
@@ -408,7 +520,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":10}],3:[function(require,module,exports){
+},{"__browserify_process":10}],4:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   , jsonp = require('./vendor/jquery-jsonp')
@@ -417,41 +529,39 @@ var EventEmitter = require('events').EventEmitter
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
+
+  this.$ = root.jQuery || root.Zepto || root.ender || root.$;
+  if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
 
-SocialBase.extend = function (protoProps, staticProps) {
-  var parent = this;
-  var child;
+/** 
+  Extend from Backbone 
+  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
+*/
+SocialBase.extend = function (protoProps) {
+  var parent = this
+    , child = function(){ 
+        return parent.apply(this, arguments); 
+      }
+    ;
 
-  // The constructor function for the new subclass is either defined by you
-  // (the "constructor" property in your `extend` definition), or defaulted
-  // by us to simply call the parent's constructor.
-  if (protoProps && _.has(protoProps, 'constructor')) {
-    child = protoProps.constructor;
-  } else {
-    child = function(){ return parent.apply(this, arguments); };
-  }
+  _.extend(child, parent);
 
-  // Add static properties to the constructor function, if supplied.
-  _.extend(child, parent, staticProps);
+  var Surrogate = function () { 
+    this.constructor = child; 
+  };
 
-  // Set the prototype chain to inherit from `parent`, without calling
-  // `parent`'s constructor function.
-  var Surrogate = function(){ this.constructor = child; };
   Surrogate.prototype = parent.prototype;
   child.prototype = new Surrogate;
-
-  // Add prototype properties (instance properties) to the subclass,
-  // if supplied.
-  if (protoProps) _.extend(child.prototype, protoProps);
-
-  // Set a convenience property in case the parent's prototype is needed
-  // later.
+  if (protoProps) {
+    _.extend(child.prototype, protoProps);
+  }
   child.__super__ = parent.prototype;
 
   return child;
 };
+/** // From Backbone */
 
 SocialBase.fetch = function (options) {
   if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
@@ -472,10 +582,6 @@ _.extend(SocialBase.prototype, {
 
   , init: function (ident) { 
     this.ident = ident;
-
-    this.$ = root.jQuery || root.Zepto || root.ender || root.$;
-
-    if (!this.$) throw "jQuery, Zepto or Ender is required to use SocialFeed.";
   }
   
   , fetch: function (options) {
@@ -513,110 +619,7 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-},{"events":11,"./vendor/jquery-jsonp":"O7kHmp","./utils":5}],6:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
-  }
-
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
-  }
-
-  , parse: function (resp) {
-    return resp.response;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
-  }
-
-});
-},{"../basemodule":3,"../resources":12,"../utils":5}],8:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').youtubeuploads
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  ajaxSettings: {
-    cache: true,
-    dataType: 'jsonp'
-  }
-
-  , init: function (ident, maxCount) {
-    this.ident = ident;
-    this.maxCount = maxCount || 10;
-  }
-
-  , url: function () {
-    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
-  }
-
-  , parse: function (resp) {
-    var feed = resp.feed;
-    return feed.entry || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.updated.$t)).getTime();
-  }
-
-  , hideAndMakeYoutubeClickable: function (item, html) {
-
-    var $html = $(html)
-      , $iframe = $html.find('iframe')
-      , thumbnail = item['media$group']['media$thumbnail'][0].url
-      ;
-
-    var $img = $('<img />', {
-      src: thumbnail,
-      'class': 'youtube-preview'
-    }).insertAfter($iframe).on('click', function () {
-      $iframe.insertAfter($img);
-      $img.remove();
-    });
-    $iframe.remove();
-
-    return $html;
-  }
-
-  , render: function (item) {
-
-    var html = templateHtml
-              .replace('{{profileurl}}', item.author[0].uri.$t)
-              .replace('{{username}}', item.author[0].name.$t)
-              .replace('{{videourl}}', item.link[0].href)
-              .replace('{{videoname}}', item.title.$t)
-              .replace('{{created_at}}', item.updated.$t)
-              .replace('{{time_since}}', _.timesince(item.updated.$t))
-              .replace('{{entryid}}', item.id.$t.substring(38))
-              .replace('{{desc}}', item['media$group']['media$description'].$t);
-
-    return this.hideAndMakeYoutubeClickable(item, html);
-  }
-
-});
-},{"../basemodule":3,"../resources":12,"../utils":5}],4:[function(require,module,exports){
+},{"events":11,"./utils":5,"./vendor/jquery-jsonp":"O7kHmp"}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -644,8 +647,17 @@ _.extend(Controller.prototype, {
   _sync_count: 0
 
   , addModule: function (module) {
+    var controller = this;
+
     this.modules.push(module);
     this.emit('moduleAdded', module);
+    module.on('fetched', _.bind(controller.moduleFetched, controller));
+    module.on('error', function () { 
+      if (controller.listeners('error').length > 0) {
+        controller.emit.apply(controller, ['error'].concat(arguments));
+      }
+      controller.moduleFetched();
+    });
   }
 
   , start: function () {
@@ -653,13 +665,6 @@ _.extend(Controller.prototype, {
     controller.emit('preFetch');
     controller.modules.forEach(function (module) {
       module.fetch();
-      module.on('fetched', _.bind(controller.moduleFetched, controller));
-      module.on('error', function () { 
-        if (controller.listeners('error').length > 0) {
-          controller.emit.apply(controller, ['error'].concat(arguments));
-        }
-        controller.moduleFetched();
-      });
     });
   }
 
@@ -673,12 +678,9 @@ _.extend(Controller.prototype, {
 
   , reload: function () {
     this.$el.empty();
-    this._offset = 1;
+    this._offset = 0;
     this.feedRendered = null;
-    this.emit('preFetch');
-    this.modules.forEach(function (module) {
-      module.fetch();
-    });
+    this.start();
   }
 
   , nextBulk: function () {
@@ -748,7 +750,44 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":11,"./utils":5}],7:[function(require,module,exports){
+},{"events":11,"./utils":5}],6:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
+  }
+
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  }
+
+  , parse: function (resp) {
+    return resp.response;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
+  }
+
+  , render: function (item) {
+    return templateHtml
+                      .replace('{{author.profileUrl}}', item.author.profileUrl)
+                      .replace('{{author.name}}', item.author.name)
+                      .replace('{{createdAt}}', item.createdAt)
+                      .replace('{{time_since}}', _.timesince(item.createdAt))
+                      .replace('{{message}}', item.message);
+                   
+    return $html;
+  }
+
+});
+},{"../basemodule":4,"../resources":12,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -874,7 +913,73 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":3,"../resources":12,"../utils":5}],9:[function(require,module,exports){
+},{"../resources":12,"../basemodule":4,"../utils":5}],8:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').youtubeuploads
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  ajaxSettings: {
+    cache: true,
+    dataType: 'jsonp'
+  }
+
+  , init: function (ident, maxCount) {
+    this.ident = ident;
+    this.maxCount = maxCount || 10;
+  }
+
+  , url: function () {
+    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
+  }
+
+  , parse: function (resp) {
+    var feed = resp.feed;
+    return feed.entry || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.updated.$t)).getTime();
+  }
+
+  , hideAndMakeYoutubeClickable: function (item, html) {
+
+    var $html = $(html)
+      , $iframe = $html.find('iframe')
+      , thumbnail = item['media$group']['media$thumbnail'][0].url
+      ;
+
+    var $img = $('<img />', {
+      src: thumbnail,
+      'class': 'youtube-preview'
+    }).insertAfter($iframe).on('click', function () {
+      $iframe.insertAfter($img);
+      $img.remove();
+    });
+    $iframe.remove();
+
+    return $html;
+  }
+
+  , render: function (item) {
+
+    var html = templateHtml
+              .replace('{{profileurl}}', item.author[0].uri.$t)
+              .replace('{{username}}', item.author[0].name.$t)
+              .replace('{{videourl}}', item.link[0].href)
+              .replace('{{videoname}}', item.title.$t)
+              .replace('{{created_at}}', item.updated.$t)
+              .replace('{{time_since}}', _.timesince(item.updated.$t))
+              .replace('{{entryid}}', item.id.$t.substring(38))
+              .replace('{{desc}}', item['media$group']['media$description'].$t);
+
+    return this.hideAndMakeYoutubeClickable(item, html);
+  }
+
+});
+},{"../basemodule":4,"../resources":12,"../utils":5}],9:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   , _ = require('../utils')
@@ -900,7 +1005,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":3,"../resources":12,"../utils":5}],12:[function(require,module,exports){
+},{"../basemodule":4,"../resources":12,"../utils":5}],12:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {

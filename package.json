@@ -1,6 +1,6 @@
 {
   "name": "socialfeed",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A sentral feed for your social channels",
   "main": "dist/socialfeed.js",
   "directories": {

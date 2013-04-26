@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Blogger Test</title>
+  <link rel="stylesheet" type="text/css" href="../../socialfeed.min.css">
+
+  <style>
+    p { width: 600px; margin: 10px auto;}
+  </style>
+</head>
+<body>
+
+  <p>Passing JSON data directly (e.g. from server-side)</p>
+  
+
+  <ol id="socialfeed" class="socialfeed-container"></ol>
+
+  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../socialfeed.js"></script>
+  <script>
+
+    ;(function () {
+
+      var JSONData = SocialFeed.Modules.extend({
+
+        init: function (data) {
+          // If data is set (value or func) and no URL is set
+          // data will be used as source.
+          this.data = data;
+        }
+
+        , orderBy: function (item) {
+          return -item.date.getTime();
+        }
+
+        , render: function (item) {
+          return '<li><h2>'+ item.message +'</h2></li>';
+        }
+
+      });
+
+      var sfeed1 = new SocialFeed( $('#socialfeed'))
+        .addModule(new JSONData([
+          {
+            date: new Date(),
+            message: 'Hello World!'
+          }
+          , {
+            date: new Date(),
+            message: 'Showing JSON Data!'
+          }
+        ]))
+        .start();
+    })();
+    
+
+  </script>
+</body>
+</html>

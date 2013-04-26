@@ -87,6 +87,11 @@ _.extend(SocialBase.prototype, {
       module.emit('error', module, textStatus, xOptions);
     };
 
+    if (!url && this.data) {
+      options.success(_.result(this, 'data'));
+      return void 0;
+    }
+
     return SocialBase.fetch(_.extend(this.ajaxSettings, options));
   }
 

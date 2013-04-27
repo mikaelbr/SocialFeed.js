@@ -9,7 +9,7 @@ var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 
-  this.$ = root.jQuery || root.Zepto || root.$;
+  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
   if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
@@ -48,7 +48,7 @@ SocialBase.fetch = function (options) {
     options.callbackParameter = options.callbackParameter || "callback";
     return jsonp(options);
   }
-  return $.ajax(options);
+  return this.$.ajax(options);
 };
 
 var root = window;

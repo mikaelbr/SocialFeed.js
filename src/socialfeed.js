@@ -5,7 +5,7 @@ var API = require('./api')
   , _ = require('./utils')
   ;
 
-var SocialFeed = window.SocialFeed = function (options) {
+var SocialFeed = function (options) {
   if ( !(this instanceof SocialFeed) ) return new SocialFeed();
   if (!options.el) {
     options = {
@@ -14,11 +14,11 @@ var SocialFeed = window.SocialFeed = function (options) {
   }
   this.c = new Controller(options);
 };
-
+// Expose public API.
 _.inherits(SocialFeed, API);
 
 // Make modules available:
-window.SocialFeed.Modules = {
+SocialFeed.Modules = {
     Disqus: require('./modules/disqus')
   , Github: require('./modules/github')
   , YouTubeUploads: require('./modules/youtubeuploads')
@@ -29,3 +29,16 @@ window.SocialFeed.Modules = {
     return SocialBase.extend(module);
   }
 };
+
+// Add SocialFeed to either the root (window, or as AMD).
+(function (root) {
+  if ( typeof define === "function" && define.amd ) {
+    define( ["jquery"], function ( $ ) {
+      SocialBase.$ = $;
+      return SocialFeed;
+    } );
+  } else {
+    // Browser globals
+    this.SocialFeed = SocialFeed;
+  }
+})(this);

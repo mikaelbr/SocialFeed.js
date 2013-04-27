@@ -1,12 +1,6 @@
 requirejs.config({
   paths: {
     'socialfeed': '../../../../socialfeed'
-  },
-  shim: {
-    'socialfeed': {
-      deps: ['jquery'],
-      exports: 'SocialFeed'
-    }
   }
 });
 

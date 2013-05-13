@@ -112,7 +112,7 @@ Every built in module is under the namespace ```SocialFeed.Modules```.
 | ```YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
 | ```Disqus(username, public_api_key)``` | Show your public comments made on Disqus. |
 | ```Delicious(username)``` | Shows your shared bookmarks. |
-| ```Delicious(rssUrl, count)``` | Fetches the ```count``` number of posts from your RSS feed at ```rssUrl``` |
+| ```RSS(rssUrl, count)``` | Fetches the ```count``` number of posts from your RSS feed at ```rssUrl``` |
 
 
 ## API

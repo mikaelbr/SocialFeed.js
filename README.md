@@ -119,13 +119,14 @@ Every built in module is under the namespace ```SocialFeed.Modules```.
 
 ```SocialFeed``` exposes several functions and events. 
 
-
 ### Methods
 
 | Method        | Description           |
 | ------------- | ----------------------|
 | ```.start()```      | Initiate SocialFeed.js. |
 | ```.reload()```     | Reload content. Fetch new data from social channels. |
+| ```.loadNumEntries(number)```     | Load the next ```number``` items, if more to load. |
+| ```.nextBulk()```     | Loads the next bulk of items. If constructor initiated with count 10, load next 10. |
 | ```.addModule(Module)``` | Add a new module to the feed. |
 | ```.on(eventType, callback)``` | Listen for an event on the feed. See [Events](#events)|
 
@@ -151,11 +152,14 @@ mod.on('eventName', function() { /* body */ });
 | ---------------- | ----------------------| ----------------------|
 | ```start```      | None | Triggered when ```.start()``` is called |
 | ```reload```     | None | Triggered when ```.reload()``` is called |
-| ```moduleAdded```| AddedModule | Triggered when module is added |
+| ```addModule```| Module | Triggered when module is added |
+| ```moduleAdded```| Module | Triggered when module is added and fetched |
 | ```preFetch```   | None | Triggered before fetching data from modules. |
 | ```postFetch```  | AllModules[] | Triggered when all modules are fetched |
 | ```dataReady```  | SortedHTMLList, AllModules[] | Triggered when all data is generated as HTML. |
 | ```rendered```   | SortedHTMLList{from _offset, to count} | Triggered when rendering new items. Passes the sorted HTML list with the rendered entities. |
+| ```nextBulk```   | None | Triggered when ```.nextBulk()``` is called. |
+| ```loadNumEntries```   | Number | Triggered when ```.loadNumEntries()``` is called. |
 | ```error```      | Module, jqXHR, AjaxOptions | Triggered when error fetching some module data. |
 
 

@@ -28,7 +28,6 @@ _.extend(Controller.prototype, {
     var controller = this;
 
     this.modules.push(module);
-    this.emit('moduleAdded', module);
     module.on('fetched', _.bind(controller.moduleFetched, controller));
     module.on('error', function () { 
       if (controller.listeners('error').length > 0) {
@@ -46,7 +45,8 @@ _.extend(Controller.prototype, {
     });
   }
 
-  , moduleFetched: function (a, b, c) {
+  , moduleFetched: function (module, b, c) {
+    this.emit('moduleAdded', module);
     if (++this._sync_count === this.modules.length) {
       // all done
       this.emit('postFetch', this.modules);

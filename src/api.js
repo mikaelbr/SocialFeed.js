@@ -18,7 +18,7 @@ API.prototype = {
     return this;
   }
 
-  , nextBulk: function (page) {
+  , nextBulk: function () {
     this.c.emit('nextBulk');
     return this;
   }

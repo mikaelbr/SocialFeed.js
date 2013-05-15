@@ -6,7 +6,7 @@ var Controller = module.exports = function (options) {
   this.modules = [];
   this.feedRendered = null;
 
-  this.$el = options.el || null;
+  this.$el = $(options.el) || $('#socialfeed');
   this.count = options.count || 1000;
   this._offset = options.offset || 0;
 

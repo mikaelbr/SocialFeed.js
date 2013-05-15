@@ -66,7 +66,7 @@ passing the ```count```-option. Even if ```count``` is 5, all module items are f
 Constructor:
 ```javascript
 new SocialFeed({
-    el: $('#foo')
+    el: '#foo' // selector or jQuery object for wrapper element.
   , count: 10 // defaults to 1000
   , offset: 10 // defaults to 0. Start rendering from offset.
 });
@@ -76,7 +76,7 @@ If you set offset to ```N```, the first ```N``` items won't show.
 
 Shortcut:
 ```javascript
-new SocialFeed($('#foo'));
+new SocialFeed('#foo');
 ```
 
 Let's see how we can add Github and Delicious as a part of the feed (using the template as defined above.):

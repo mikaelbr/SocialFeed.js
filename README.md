@@ -241,15 +241,15 @@ See [examples](https://github.com/mikaelbr/SocialFeed.js/tree/master/example) fo
 
 ## Changelog
 
-**v0.3.7**: Added Vimeo as a module. 
-**v0.3.6-2**: Simplified the constructor, to take a element selector instead of jQuery element.
-**v0.3.6-1**: Event type clean up.
-**v0.3.6**: Added AMD definition.
-**v0.3.5**: Major bugfix: Browserify now wraps scripts in a SIAF. SocialFeed.js no longer destroys everything it touches.
-**v0.3.4**: 
-* Added RSS Module
-* Added ES5 Shims
-* Bugfix: Reloading fixed.
+* **v0.3.7**: Added Vimeo as a module. 
+* **v0.3.6-2**: Simplified the constructor, to take a element selector instead of jQuery element.
+* **v0.3.6-1**: Event type clean up.
+* **v0.3.6**: Added AMD definition.
+* **v0.3.5**: Major bugfix: Browserify now wraps scripts in a SIAF. SocialFeed.js no longer destroys everything it touches.
+* **v0.3.4**: 
+  * Added RSS Module
+  * Added ES5 Shims
+  * Bugfix: Reloading fixed.
 
 
 ## Contribute

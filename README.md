@@ -9,6 +9,7 @@ SocialFeed.js was inspired by the compiled feed on http://gnab.org/, and was des
 At this moment the following features are implemented:
 
 * Github
+* Vimeo
 * Youtube Video Uploads
 * Disqus
 * RSS Feeds
@@ -109,6 +110,7 @@ Every built in module is under the namespace ```SocialFeed.Modules```.
 | Module        | Description           |
 | ------------- | ----------------------|
 | ```Github(username[, hideEvents = None])``` | Shows all your events on github, including create repositories, starring, forking, pull requesting, pushing. |
+| ```Vimeo(username[, hideEvents = None])``` | Shows your activity on Vimeo, including like, add comment and upload. |
 | ```YouTubeUploads(username[, count = 10])``` | Shows uploaded YouTube videos. Sorted by updated time, not published. |
 | ```Disqus(username, public_api_key)``` | Show your public comments made on Disqus. |
 | ```Delicious(username)``` | Shows your shared bookmarks. |

@@ -24,6 +24,7 @@ SocialFeed.Modules = {
   , YouTubeUploads: require('./modules/youtubeuploads')
   , Delicious: require('./modules/delicious')
   , RSS: require('./modules/rss')
+  , Vimeo: require('./modules/vimeo')
   , SocialBase: SocialBase
   , extend: function (module) {
     return SocialBase.extend(module);

@@ -1,6 +1,6 @@
 {
   "name": "socialfeed",
-  "version": "0.3.6-2",
+  "version": "0.3.7",
   "ignore": [
     "**/.*",
     "src",

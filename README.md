@@ -15,7 +15,7 @@ At this moment the following features are implemented:
 * RSS Feeds
 * Delicious
 
-However, expading SocialFeed.js is a simple task. See [Expading SocialFeed.js](#expanding-socialfeedjs) for more information.
+However, extending SocialFeed.js is a simple task. See [Extending SocialFeed.js](#extending-socialfeedjs) for more information.
 
 See SocialFeed.js in use at my [personal site](http://mikaelb.net/). For a complete example two SocialFeeds, 
 Require.JS, extending modules, using with Handlebar, etc see the source code for http://mikaelb.net/ at 
@@ -173,7 +173,7 @@ mod.on('eventName', function() { /* body */ });
 | ```fetched```       |  Module, jqXHR, AjaxOptions | Triggered when data for module is fetched. |
 
 
-## Expanding SocialFeed.js
+## Extending SocialFeed.js
 
 ### Adding new Social sites. 
 

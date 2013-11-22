@@ -9,7 +9,7 @@
     "make.js",
     "package.json",
     "node_modules",
-    "components"
+    "bower_components"
   ],
   "main": "socialfeed.min.js",
   "dependencies": {

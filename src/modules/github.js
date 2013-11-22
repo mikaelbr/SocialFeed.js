@@ -2,13 +2,13 @@ var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
   , tmpl = {
-    create: resources.github_create,
-    createbranch: resources.github_createbranch,
-    watch: resources.github_watch,
-    push: resources.github_push,
-    pullrequest: resources.github_pullrequest,
-    fork: resources.github_fork,
-    issue: resources.github_issue
+      create: resources.github_create
+    , createbranch: resources.github_createbranch
+    , watch: resources.github_watch
+    , push: resources.github_push
+    , pullrequest: resources.github_pullrequest
+    , fork: resources.github_fork
+    , issue: resources.github_issue
   };
 
 var getRepoURL = function (item) {
@@ -18,13 +18,14 @@ var getRepoURL = function (item) {
   return 'https://github.com/' + item.actor.login;
 }
 , templateHelper = function (template, item) {
-  return tmpl[template]
-            .replace('{{profileUrl}}', getUserURL(item))
-            .replace('{{username}}', item.actor.login)
-            .replace('{{reponame}}', item.repo.name)
-            .replace('{{repourl}}', getRepoURL(item))
-            .replace('{{time_since}}', _.timesince(item.created_at))
-            .replace('{{created_at}}', item.created_at);
+  return _.template(tmpl[template], {
+      profile_url: getUserURL(item)
+    , username: item.actor.login
+    , repo_name: item.repo.name
+    , repo_url: getRepoURL(item)
+    , time_since: _.timesince(item.created_at)
+    , created_at: item.created_at
+  });
 }
 ;
 
@@ -58,9 +59,10 @@ module.exports = SocialBase.extend({
         return templateHelper('create', item);
       }
 
-      return templateHelper('createbranch', item)
-                .replace('{{branchurl}}', getRepoURL(item) + '/tree/' + item.payload.ref)
-                .replace('{{branchname}}', item.payload.ref);
+      return _.template(templateHelper('createbranch', item), {
+          branch_url: getRepoURL(item) + '/tree/' + item.payload.ref
+        , branch_name: item.payload.ref
+      });
     }
 
     , 'WatchEvent': function (item) {
@@ -70,7 +72,7 @@ module.exports = SocialBase.extend({
     , 'PushEvent': function (item) {
       var $html = $(templateHelper('push', item));
 
-      // Add commits: 
+      // Add commits:
       var $ul = $html.find('.socialfeed-commit-list')
         , $li = $ul.find('li:first');
 
@@ -79,7 +81,7 @@ module.exports = SocialBase.extend({
 
         $it.find('a')
           .attr('href', getRepoURL(item) + '/commit/' + commit.sha)
-          .text(commit.sha.substr(0, 7));
+          .text(commit.sha.substr(0, 7))
         $it.find('span').text(commit.message);
         $ul.prepend($it);
       });
@@ -88,25 +90,28 @@ module.exports = SocialBase.extend({
     }
 
     , 'PullRequestEvent': function (item) {
-      return templateHelper('pullrequest', item)
-                .replace('{{action}}', item.payload.action)
-                .replace('{{title}}', item.payload.pull_request.title)
-                .replace('{{pullrequesturl}}', item.payload.pull_request.html_url)
-                .replace('{{pullrequestname}}', item.repo.name + '#' + item.payload.number);
+      return _.template(templateHelper('pullrequest', item), {
+          "action": item.payload.action
+        , "title": item.payload.pull_request.title
+        , "pullrequest_url": item.payload.pull_request.html_url
+        , "pullrequest_name": item.repo.name + '#' + item.payload.number
+      });
     }
 
     , 'ForkEvent': function (item) {
-      return templateHelper('fork', item)
-                .replace('{{forkeeurl}}', item.payload.forkee.html_url)
-                .replace('{{forkeename}}', item.payload.forkee.full_name);
+      return _.template(templateHelper('fork', item), {
+          "forkee_url": item.payload.forkee.html_url
+        , "forkee_name": item.payload.forkee.full_name
+      });
     }
 
     , 'IssuesEvent': function (item) {
-      return templateHelper('issue', item)
-                .replace('{{action}}', item.payload.action)
-                .replace('{{title}}', item.payload.issue.title)
-                .replace('{{issueurl}}', item.payload.issue.html_url)
-                .replace('{{issuename}}', item.repo.name + '#' + item.payload.number);
+      return _.template(templateHelper('issue', item), {
+          "action": item.payload.action
+        , "title": item.payload.issue.title
+        , "issue_url": item.payload.issue.html_url
+        , "issue_name": item.repo.name + '#' + item.payload.number
+      });
     }
   }
 
@@ -117,7 +122,7 @@ module.exports = SocialBase.extend({
   , render: function (item) {
     if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    } 
+    }
 
     return null;
   }

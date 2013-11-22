@@ -63,6 +63,15 @@ exports.extend = function (obj) {
   return obj;
 };
 
+exports.template = function (template, o) {
+  // From douglas crockfords
+  return template.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = o[b];
+      return typeof r === 'string' || typeof r === 'number' ? r : a;
+    }
+  );
+}
 
 // From Node util lib
 
@@ -95,7 +104,7 @@ exports.inherits = function(ctor, superCtor) {
 /*
  * ECMAScript 5 Shims.
  * Copyright 2009, 2010 Kristopher Michael Kowal. All rights reserved.
- */ 
+ */
 
 // ES5 9.9
 // http://es5.github.com/#x9.9

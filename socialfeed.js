@@ -147,6 +147,15 @@ exports.extend = function (obj) {
   return obj;
 };
 
+exports.template = function (template, o) {
+  // From douglas crockfords
+  return template.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = o[b];
+      return typeof r === 'string' || typeof r === 'number' ? r : a;
+    }
+  );
+}
 
 // From Node util lib
 
@@ -179,7 +188,7 @@ exports.inherits = function(ctor, superCtor) {
 /*
  * ECMAScript 5 Shims.
  * Copyright 2009, 2010 Kristopher Michael Kowal. All rights reserved.
- */ 
+ */
 
 // ES5 9.9
 // http://es5.github.com/#x9.9
@@ -523,7 +532,282 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":12}],3:[function(require,module,exports){
+},{"__browserify_process":12}],4:[function(require,module,exports){
+(function(){var EventEmitter = require('events').EventEmitter
+  , _ = require('./utils')
+  ;
+
+// imports as global..
+require('./vendor/jquery-jsonp')
+
+var SocialBase = module.exports = function () {
+  this.collection = [];
+  this.init.apply(this, arguments);
+
+  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
+  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
+};
+_.inherits(SocialBase, EventEmitter);
+
+/** 
+  Extend from Backbone 
+  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
+*/
+SocialBase.extend = function (protoProps) {
+  var parent = this
+    , child = function(){ 
+        return parent.apply(this, arguments); 
+      }
+    ;
+
+  _.extend(child, parent);
+
+  var Surrogate = function () { 
+    this.constructor = child; 
+  };
+
+  Surrogate.prototype = parent.prototype;
+  child.prototype = new Surrogate;
+  if (protoProps) {
+    _.extend(child.prototype, protoProps);
+  }
+  child.__super__ = parent.prototype;
+
+  return child;
+};
+/** // From Backbone */
+
+SocialBase.fetch = function (options) {
+  var jsonp = $.jsonp;
+  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
+    options.callbackParameter = options.callbackParameter || "callback";
+    return jsonp(options);
+  }
+  return this.$.ajax(options);
+};
+
+var root = window;
+
+_.extend(SocialBase.prototype, {
+
+  ajaxSettings: {
+    dataType: 'jsonp',
+    type: 'GET'
+  }
+
+  , init: function (ident) { 
+    this.ident = ident;
+  }
+  
+  , fetch: function (options) {
+    options = options ? _.clone(options) : {};
+
+    var url = _.result(this, 'url')
+      , module = this
+      , success = options.success
+      ;
+
+    options.url = url;
+    options.success = function(resp) {
+      var parsed = module.parse(resp);
+
+      module.collection = parsed;
+      if (success) success(module, parsed, options);
+      module.emit('fetched', module, parsed, options);
+    };
+
+    var error = options.error;
+    options.error = function(xOptions, textStatus) {
+      if (error) error(module, textStatus, xOptions);
+      module.emit('error', module, textStatus, xOptions);
+    };
+
+    if (!url && this.data) {
+      options.success(_.result(this, 'data'));
+      return void 0;
+    }
+
+    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
+  }
+
+  , parse: function (resp) { 
+    return resp;
+  }
+
+  , orderBy: function (item) {  }
+
+  , render: function (item) {  }
+
+});
+})()
+},{"events":13,"./vendor/jquery-jsonp":14,"./utils":5}],6:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
+  }
+
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  }
+
+  , parse: function (resp) {
+    return resp.response;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
+  }
+
+  , render: function (item) {
+    return _.template(templateHtml, {
+      profile_url: item.author.profileUrl,
+      author_name: item.author.name,
+      created_at: item.createdAt,
+      time_since: _.timesince(item.createdAt),
+      message: item.message
+    });
+  }
+
+});
+},{"../basemodule":4,"../resources":15,"../utils":5}],8:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').youtubeuploads
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  ajaxSettings: {
+    cache: true,
+    dataType: 'jsonp'
+  }
+
+  , init: function (ident, maxCount) {
+    this.ident = ident;
+    this.maxCount = maxCount || 10;
+  }
+
+  , url: function () {
+    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
+  }
+
+  , parse: function (resp) {
+    var feed = resp.feed;
+    return feed.entry || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.updated.$t)).getTime();
+  }
+
+  , hideAndMakeYoutubeClickable: function (item, html) {
+
+    var $html = $(html)
+      , $iframe = $html.find('iframe')
+      , thumbnail = item['media$group']['media$thumbnail'][0].url
+      ;
+
+    var $img = $('<img />', {
+      src: thumbnail,
+      'class': 'youtube-preview'
+    }).insertAfter($iframe).on('click', function () {
+      $iframe.insertAfter($img);
+      $img.remove();
+    });
+    $iframe.remove();
+
+    return $html;
+  }
+
+  , render: function (item) {
+
+    var html = _.template(templateHtml, {
+        profile_url: item.author[0].uri.$t
+      , username: item.author[0].name.$t
+      , video_url: item.link[0].href
+      , video_name: item.title.$t
+      , created_at: item.updated.$t
+      , time_since: _.timesince(item.updated.$t)
+      , entry_id: item.id.$t.substring(38)
+      , desc: item['media$group']['media$description'].$t
+    });
+
+    return this.hideAndMakeYoutubeClickable(item, html);
+  }
+
+});
+},{"../basemodule":4,"../resources":15,"../utils":5}],9:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').delicious
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  url: function () {
+    return 'http://feeds.delicious.com/v2/json/' + this.ident;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.dt)).getTime();
+  }
+
+  , render: function (item) {
+    item.time_since = _.timesince(item.dt);
+    return _.template(templateHtml, item)
+  }
+
+});
+},{"../basemodule":4,"../resources":15,"../utils":5}],10:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').rss
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+  init: function (url, count) {
+    this.feedURL = url;
+    this.count = count || 10;
+  }
+
+  , url: function () {
+    // Use Google API feed service.
+    return 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + this.count + '&q=' + encodeURIComponent(this.feedURL);
+  }
+
+  , parse: function (resp) {
+    var feed = resp.responseData.feed;
+    if (!feed) {
+      return [];
+    }
+    this.blogname = feed.title;
+    this.blogurl = feed.link;
+    return feed.entries || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.publishedDate)).getTime();
+  }
+
+  , render: function (item) {
+    return _.template(templateHtml, {
+        "blog_name": this.blogname
+      , "blog_url": this.blogurl
+      , "url": item.link
+      , "title": item.title
+      , "date": item.publishedDate
+      , "time_since": _.timesince(item.publishedDate)
+    });
+  }
+});
+},{"../basemodule":4,"../resources":15,"../utils":5}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -654,163 +938,22 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":13,"./utils":5}],4:[function(require,module,exports){
-(function(){var EventEmitter = require('events').EventEmitter
-  , _ = require('./utils')
-  ;
-
-// imports as global..
-require('./vendor/jquery-jsonp')
-
-var SocialBase = module.exports = function () {
-  this.collection = [];
-  this.init.apply(this, arguments);
-
-  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
-  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
-};
-_.inherits(SocialBase, EventEmitter);
-
-/** 
-  Extend from Backbone 
-  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
-*/
-SocialBase.extend = function (protoProps) {
-  var parent = this
-    , child = function(){ 
-        return parent.apply(this, arguments); 
-      }
-    ;
-
-  _.extend(child, parent);
-
-  var Surrogate = function () { 
-    this.constructor = child; 
-  };
-
-  Surrogate.prototype = parent.prototype;
-  child.prototype = new Surrogate;
-  if (protoProps) {
-    _.extend(child.prototype, protoProps);
-  }
-  child.__super__ = parent.prototype;
-
-  return child;
-};
-/** // From Backbone */
-
-SocialBase.fetch = function (options) {
-  var jsonp = $.jsonp;
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
-  }
-  return this.$.ajax(options);
-};
-
-var root = window;
-
-_.extend(SocialBase.prototype, {
-
-  ajaxSettings: {
-    dataType: 'jsonp',
-    type: 'GET'
-  }
-
-  , init: function (ident) { 
-    this.ident = ident;
-  }
-  
-  , fetch: function (options) {
-    options = options ? _.clone(options) : {};
-
-    var url = _.result(this, 'url')
-      , module = this
-      , success = options.success
-      ;
-
-    options.url = url;
-    options.success = function(resp) {
-      var parsed = module.parse(resp);
-
-      module.collection = parsed;
-      if (success) success(module, parsed, options);
-      module.emit('fetched', module, parsed, options);
-    };
-
-    var error = options.error;
-    options.error = function(xOptions, textStatus) {
-      if (error) error(module, textStatus, xOptions);
-      module.emit('error', module, textStatus, xOptions);
-    };
-
-    if (!url && this.data) {
-      options.success(_.result(this, 'data'));
-      return void 0;
-    }
-
-    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
-  }
-
-  , parse: function (resp) { 
-    return resp;
-  }
-
-  , orderBy: function (item) {  }
-
-  , render: function (item) {  }
-
-});
-})()
-},{"events":13,"./utils":5,"./vendor/jquery-jsonp":14}],6:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
-  }
-
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
-  }
-
-  , parse: function (resp) {
-    return resp.response;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],7:[function(require,module,exports){
+},{"events":13,"./utils":5}],14:[function(require,module,exports){
+// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
+// https://github.com/jaubourg/jquery-jsonp
+(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
+},{}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
   , tmpl = {
-    create: resources.github_create,
-    createbranch: resources.github_createbranch,
-    watch: resources.github_watch,
-    push: resources.github_push,
-    pullrequest: resources.github_pullrequest,
-    fork: resources.github_fork,
-    issue: resources.github_issue
+      create: resources.github_create
+    , createbranch: resources.github_createbranch
+    , watch: resources.github_watch
+    , push: resources.github_push
+    , pullrequest: resources.github_pullrequest
+    , fork: resources.github_fork
+    , issue: resources.github_issue
   };
 
 var getRepoURL = function (item) {
@@ -820,13 +963,14 @@ var getRepoURL = function (item) {
   return 'https://github.com/' + item.actor.login;
 }
 , templateHelper = function (template, item) {
-  return tmpl[template]
-            .replace('{{profileUrl}}', getUserURL(item))
-            .replace('{{username}}', item.actor.login)
-            .replace('{{reponame}}', item.repo.name)
-            .replace('{{repourl}}', getRepoURL(item))
-            .replace('{{time_since}}', _.timesince(item.created_at))
-            .replace('{{created_at}}', item.created_at);
+  return _.template(tmpl[template], {
+      profile_url: getUserURL(item)
+    , username: item.actor.login
+    , repo_name: item.repo.name
+    , repo_url: getRepoURL(item)
+    , time_since: _.timesince(item.created_at)
+    , created_at: item.created_at
+  });
 }
 ;
 
@@ -860,9 +1004,10 @@ module.exports = SocialBase.extend({
         return templateHelper('create', item);
       }
 
-      return templateHelper('createbranch', item)
-                .replace('{{branchurl}}', getRepoURL(item) + '/tree/' + item.payload.ref)
-                .replace('{{branchname}}', item.payload.ref);
+      return _.template(templateHelper('createbranch', item), {
+          branch_url: getRepoURL(item) + '/tree/' + item.payload.ref
+        , branch_name: item.payload.ref
+      });
     }
 
     , 'WatchEvent': function (item) {
@@ -872,7 +1017,7 @@ module.exports = SocialBase.extend({
     , 'PushEvent': function (item) {
       var $html = $(templateHelper('push', item));
 
-      // Add commits: 
+      // Add commits:
       var $ul = $html.find('.socialfeed-commit-list')
         , $li = $ul.find('li:first');
 
@@ -881,7 +1026,7 @@ module.exports = SocialBase.extend({
 
         $it.find('a')
           .attr('href', getRepoURL(item) + '/commit/' + commit.sha)
-          .text(commit.sha.substr(0, 7));
+          .text(commit.sha.substr(0, 7))
         $it.find('span').text(commit.message);
         $ul.prepend($it);
       });
@@ -890,25 +1035,28 @@ module.exports = SocialBase.extend({
     }
 
     , 'PullRequestEvent': function (item) {
-      return templateHelper('pullrequest', item)
-                .replace('{{action}}', item.payload.action)
-                .replace('{{title}}', item.payload.pull_request.title)
-                .replace('{{pullrequesturl}}', item.payload.pull_request.html_url)
-                .replace('{{pullrequestname}}', item.repo.name + '#' + item.payload.number);
+      return _.template(templateHelper('pullrequest', item), {
+          "action": item.payload.action
+        , "title": item.payload.pull_request.title
+        , "pullrequest_url": item.payload.pull_request.html_url
+        , "pullrequest_name": item.repo.name + '#' + item.payload.number
+      });
     }
 
     , 'ForkEvent': function (item) {
-      return templateHelper('fork', item)
-                .replace('{{forkeeurl}}', item.payload.forkee.html_url)
-                .replace('{{forkeename}}', item.payload.forkee.full_name);
+      return _.template(templateHelper('fork', item), {
+          "forkee_url": item.payload.forkee.html_url
+        , "forkee_name": item.payload.forkee.full_name
+      });
     }
 
     , 'IssuesEvent': function (item) {
-      return templateHelper('issue', item)
-                .replace('{{action}}', item.payload.action)
-                .replace('{{title}}', item.payload.issue.title)
-                .replace('{{issueurl}}', item.payload.issue.html_url)
-                .replace('{{issuename}}', item.repo.name + '#' + item.payload.number);
+      return _.template(templateHelper('issue', item), {
+          "action": item.payload.action
+        , "title": item.payload.issue.title
+        , "issue_url": item.payload.issue.html_url
+        , "issue_name": item.repo.name + '#' + item.payload.number
+      });
     }
   }
 
@@ -919,144 +1067,11 @@ module.exports = SocialBase.extend({
   , render: function (item) {
     if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    } 
+    }
 
     return null;
   }
 
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],8:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').youtubeuploads
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  ajaxSettings: {
-    cache: true,
-    dataType: 'jsonp'
-  }
-
-  , init: function (ident, maxCount) {
-    this.ident = ident;
-    this.maxCount = maxCount || 10;
-  }
-
-  , url: function () {
-    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
-  }
-
-  , parse: function (resp) {
-    var feed = resp.feed;
-    return feed.entry || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.updated.$t)).getTime();
-  }
-
-  , hideAndMakeYoutubeClickable: function (item, html) {
-
-    var $html = $(html)
-      , $iframe = $html.find('iframe')
-      , thumbnail = item['media$group']['media$thumbnail'][0].url
-      ;
-
-    var $img = $('<img />', {
-      src: thumbnail,
-      'class': 'youtube-preview'
-    }).insertAfter($iframe).on('click', function () {
-      $iframe.insertAfter($img);
-      $img.remove();
-    });
-    $iframe.remove();
-
-    return $html;
-  }
-
-  , render: function (item) {
-
-    var html = templateHtml
-              .replace('{{profileurl}}', item.author[0].uri.$t)
-              .replace('{{username}}', item.author[0].name.$t)
-              .replace('{{videourl}}', item.link[0].href)
-              .replace('{{videoname}}', item.title.$t)
-              .replace('{{created_at}}', item.updated.$t)
-              .replace('{{time_since}}', _.timesince(item.updated.$t))
-              .replace('{{entryid}}', item.id.$t.substring(38))
-              .replace('{{desc}}', item['media$group']['media$description'].$t);
-
-    return this.hideAndMakeYoutubeClickable(item, html);
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],9:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').delicious
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  url: function () {
-    return 'http://feeds.delicious.com/v2/json/' + this.ident;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.dt)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                  .replace('{{u}}', item.u)
-                  .replace('{{d}}', item.d)
-                  .replace('{{n}}', item.n)
-                  .replace('{{dt}}', item.dt)
-                  .replace('{{time_since}}', _.timesince(item.dt));
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],10:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').rss
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-  init: function (url, count) {
-    this.feedURL = url;
-    this.count = count || 10;
-  }
-
-  , url: function () {
-    // Use Google API feed service.
-    return 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + this.count + '&q=' + encodeURIComponent(this.feedURL);
-  }
-
-  , parse: function (resp) {
-    var feed = resp.responseData.feed;
-    if (!feed) {
-      return [];
-    }
-    this.blogname = feed.title;
-    this.blogurl = feed.link;
-    return feed.entries || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.publishedDate)).getTime();
-  }
-
-  , render: function (item) {
-    return templateHtml
-                  .replace('{{blogname}}', this.blogname)
-                  .replace('{{blogurl}}', this.blogurl)
-                  .replace('{{url}}', item.link)
-                  .replace('{{title}}', item.title)
-                  .replace('{{dt}}', item.publishedDate)
-                  .replace('{{time_since}}', _.timesince(item.publishedDate));
-  }
 });
 },{"../basemodule":4,"../resources":15,"../utils":5}],11:[function(require,module,exports){
 var SocialBase = require('../basemodule')
@@ -1073,16 +1088,17 @@ var SocialBase = require('../basemodule')
     , 'upload': true
   }
   , templateHelper = function (template, item) {
-    return tmpl[template]
-              .replace('{{user_url}}', item.user_url)
-              .replace('{{user_name}}', item.user_name)
-              .replace('{{user_portrait}}', item.user_portrait_small)
-              .replace('{{video_title}}', item.video_title)
-              .replace(new RegExp('{{video_url}}', 'g'), item.video_url)
-              .replace('{{video_thumbnail_large}}', item.video_thumbnail_large)
-              .replace('{{user_portrait}}', item.user_portrait_small)
-              .replace('{{time_since}}', _.timesince(item.date))
-              .replace('{{created_at}}', item.date);
+    return _.template(tmpl[template], {
+        user_url: item.user_url
+      , user_name: item.user_name
+      , user_portrait: item.user_portrait_small
+      , video_title: item.video_title
+      , video_url: item.video_url
+      , video_thumbnail_large: item.video_thumbnail_large
+      , user_portrait: item.user_portrait_small
+      , time_since: _.timesince(item.date)
+      , created_at: item.date
+    });
   }
   ;
 
@@ -1112,9 +1128,11 @@ module.exports = SocialBase.extend({
     }
 
     , 'add_comment': function (item) {
-      return templateHelper('add_comment', item).replace('{{comment_text}}', item.comment_text);
+      return _.template(templateHelper('add_comment', item), {
+        "comment_text": item.comment_text
+      });
     }
-  
+
     , 'upload': function (item) {
       return templateHelper('upload', item);
     }
@@ -1123,34 +1141,30 @@ module.exports = SocialBase.extend({
   , render: function (item) {
     if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    } 
+    }
 
     return null;
   }
 
 });
-},{"../basemodule":4,"../resources":15,"../utils":5}],14:[function(require,module,exports){
-// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
-// https://github.com/jaubourg/jquery-jsonp
-(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
-},{}],15:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],15:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {
-	"delicious": "<div class=\"socialfeed-item socialfeed-delicious\">\n  <i class=\"socialfeed-icon icon-link\"></i>\n  <header>\n    <h2><a href=\"{{u}}\">{{d}}</a></h2>\n    <time datetime=\"{{dt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{n}}\n  </div>\n</div>",
-	"disqus": "<div class=\"socialfeed-item socialfeed-disqus\">\n  <i class=\"socialfeed-icon icon-comment-alt\"></i>\n  <header>\n    <h2><a href=\"{{author.profileUrl}}\">{{author.name}}</a></h2>\n    <time datetime=\"{{createdAt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{message}}\n  </div>\n</div>",
-	"github_create": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-create\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> created repository <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_createbranch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-createbranch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      created branch <a href=\"{{branchurl}}\">{{branchname}}</a> \n      at <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_fork": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-fork\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      forked repository <a href=\"{{repourl}}\">{{reponame}}</a>\n      to <a href=\"{{forkeeurl}}\">{{forkeename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"github_issue": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-issue\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} issue <a href=\"{{issueurl}}\">{{issuename}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
-	"github_pullrequest": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-pull-request\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      {{action}} pull request <a href=\"{{pullrequesturl}}\">{{pullrequestname}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {{title}}\n  </div>\n</div>",
-	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{{profileUrl}}\">{{username}}</a> \n      pushed to <a href=\"{{repourl}}\">{{reponame}}</a>\n    </h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{{commiturl}}\">{{commit}}</a>\n      <span>{{commit_message}}</span>\n    </li>\n  </ul>\n</div>",
-	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{{profileUrl}}\">{{username}}</a> starred <a href=\"{{repourl}}\">{{reponame}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n</div>",
-	"rss": "<div class=\"socialfeed-item socialfeed-rss\">\n  <i class=\"socialfeed-icon icon-rss\"></i>\n  <header>\n    <h2>\n      New blog post at \n      <a href=\"{{blogurl}}\">{{blogname}}</a>\n    </h2>\n    <time datetime=\"{{dt}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <a href=\"{{url}}\">{{title}}</a>\n  </div>\n</div>",
-	"vimeo_add_comment": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-comment\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{{user_url}}\">{{user_name}}</a> commented on <a href=\"{{video_url}}\">{{video_title}}</a> on Vimeo</h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    {{comment_text}}\n  </div>\n</div>",
-	"vimeo_like": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-like\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{{user_url}}\">{{user_name}}</a> liked a <a href=\"{{video_url}}\">video on Vimeo</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{{video_url}}\">{{video_title}}</a></h3>\n    <a href=\"{{video_url}}\">\n      <img src=\"{{video_thumbnail_large}}\" alt=\"{{video_title}}\">\n    </a>\n  </div>\n</div>",
-	"vimeo_upload": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-upload\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{{user_url}}\">{{user_name}}</a> uploaded a <a href=\"{{video_url}}\">video on Vimeo</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{{video_url}}\">{{video_title}}</a></h3>\n    <a href=\"{{video_url}}\">\n      <img src=\"{{video_thumbnail_large}}\" alt=\"{{video_title}}\">\n    </a>\n  </div>\n</div>",
-	"youtubeuploads": "<div class=\"socialfeed-item socialfeed-youtube socialfeed-youtube-upload\">\n  <i class=\"socialfeed-icon icon-play-circle\"></i>\n  <header>\n    <h2><a href=\"{{profileurl}}\">{{username}}</a> added a video: <a href=\"{{videourl}}\">{{videoname}}</a></h2>\n    <time datetime=\"{{created_at}}\">{{time_since}}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <iframe class=\"youtube-preview\"\n      src=\"http://www.youtube.com/embed/{{entryid}}?wmode=transparent&amp;HD=0&amp;rel=0&amp;showinfo=0&amp;controls=1&amp;autoplay=1\" \n      frameborder=\"0\" \n      allowfullscreen>\n    </iframe>\n    <p>{{desc}}</p>\n  </div>\n</div>",
+	"delicious": "<div class=\"socialfeed-item socialfeed-delicious\">\n  <i class=\"socialfeed-icon icon-link\"></i>\n  <header>\n    <h2><a href=\"{u}\">{d}</a></h2>\n    <time datetime=\"{dt}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {n}\n  </div>\n</div>",
+	"disqus": "<div class=\"socialfeed-item socialfeed-disqus\">\n  <i class=\"socialfeed-icon icon-comment-alt\"></i>\n  <header>\n    <h2><a href=\"{profile_url}\">{author_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {message}\n  </div>\n</div>",
+	"github_create": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-create\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a> created repository <a href=\"{repo_url}\">{repo_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n</div>",
+	"github_createbranch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-createbranch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      created branch <a href=\"{branchurl}\">{branch_name}</a>\n      at <a href=\"{repo_url}\">{repo_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n</div>",
+	"github_fork": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-fork\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      forked repository <a href=\"{repo_url}\">{repo_name}</a>\n      to <a href=\"{forkee_url}\">{forkee_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n</div>",
+	"github_issue": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-issue\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      {action} issue <a href=\"{issue_url}\">{issue_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {title}\n  </div>\n</div>",
+	"github_pullrequest": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-pull-request\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      {action} pull request <a href=\"{pullrequest_url}\">{pullrequest_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {title}\n  </div>\n</div>",
+	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      pushed to <a href=\"{repo_url}\">{repo_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{commit_url}\">{commit}</a>\n      <span>{commit_message}</span>\n    </li>\n  </ul>\n</div>",
+	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{profile_url}\">{username}</a> starred <a href=\"{repo_url}\">{repo_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n</div>",
+	"rss": "<div class=\"socialfeed-item socialfeed-rss\">\n  <i class=\"socialfeed-icon icon-rss\"></i>\n  <header>\n    <h2>\n      New blog post at\n      <a href=\"{blogurl}\">{blogname}</a>\n    </h2>\n    <time datetime=\"{date}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <a href=\"{url}\">{title}</a>\n  </div>\n</div>",
+	"vimeo_add_comment": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-comment\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> commented on <a href=\"{video_url}\">{video_title}</a> on Vimeo</h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    {comment_text}\n  </div>\n</div>",
+	"vimeo_like": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-like\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> liked a <a href=\"{video_url}\">video on Vimeo</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{video_url}\">{video_title}</a></h3>\n    <a href=\"{video_url}\">\n      <img src=\"{video_thumbnail_large}\" alt=\"{video_title}\">\n    </a>\n  </div>\n</div>",
+	"vimeo_upload": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-upload\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> uploaded a <a href=\"{video_url}\">video on Vimeo</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{video_url}\">{video_title}</a></h3>\n    <a href=\"{video_url}\">\n      <img src=\"{video_thumbnail_large}\" alt=\"{video_title}\">\n    </a>\n  </div>\n</div>",
+	"youtubeuploads": "<div class=\"socialfeed-item socialfeed-youtube socialfeed-youtube-upload\">\n  <i class=\"socialfeed-icon icon-play-circle\"></i>\n  <header>\n    <h2><a href=\"{profile_url}\">{username}</a> added a video: <a href=\"{video_url}\">{video_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <iframe class=\"youtube-preview\"\n      src=\"http://www.youtube.com/embed/{entry_id}?wmode=transparent&amp;HD=0&amp;rel=0&amp;showinfo=0&amp;controls=1&amp;autoplay=1\"\n      frameborder=\"0\"\n      allowfullscreen>\n    </iframe>\n    <p>{desc}</p>\n  </div>\n</div>",
 
 };
 },{}]},{},[1])

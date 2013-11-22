@@ -49,15 +49,16 @@ module.exports = SocialBase.extend({
 
   , render: function (item) {
 
-    var html = templateHtml
-              .replace('{{profileurl}}', item.author[0].uri.$t)
-              .replace('{{username}}', item.author[0].name.$t)
-              .replace('{{videourl}}', item.link[0].href)
-              .replace('{{videoname}}', item.title.$t)
-              .replace('{{created_at}}', item.updated.$t)
-              .replace('{{time_since}}', _.timesince(item.updated.$t))
-              .replace('{{entryid}}', item.id.$t.substring(38))
-              .replace('{{desc}}', item['media$group']['media$description'].$t);
+    var html = _.template(templateHtml, {
+        profile_url: item.author[0].uri.$t
+      , username: item.author[0].name.$t
+      , video_url: item.link[0].href
+      , video_name: item.title.$t
+      , created_at: item.updated.$t
+      , time_since: _.timesince(item.updated.$t)
+      , entry_id: item.id.$t.substring(38)
+      , desc: item['media$group']['media$description'].$t
+    });
 
     return this.hideAndMakeYoutubeClickable(item, html);
   }

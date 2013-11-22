@@ -12,16 +12,17 @@ var SocialBase = require('../basemodule')
     , 'upload': true
   }
   , templateHelper = function (template, item) {
-    return tmpl[template]
-              .replace('{{user_url}}', item.user_url)
-              .replace('{{user_name}}', item.user_name)
-              .replace('{{user_portrait}}', item.user_portrait_small)
-              .replace('{{video_title}}', item.video_title)
-              .replace(new RegExp('{{video_url}}', 'g'), item.video_url)
-              .replace('{{video_thumbnail_large}}', item.video_thumbnail_large)
-              .replace('{{user_portrait}}', item.user_portrait_small)
-              .replace('{{time_since}}', _.timesince(item.date))
-              .replace('{{created_at}}', item.date);
+    return _.template(tmpl[template], {
+        user_url: item.user_url
+      , user_name: item.user_name
+      , user_portrait: item.user_portrait_small
+      , video_title: item.video_title
+      , video_url: item.video_url
+      , video_thumbnail_large: item.video_thumbnail_large
+      , user_portrait: item.user_portrait_small
+      , time_since: _.timesince(item.date)
+      , created_at: item.date
+    });
   }
   ;
 
@@ -51,9 +52,11 @@ module.exports = SocialBase.extend({
     }
 
     , 'add_comment': function (item) {
-      return templateHelper('add_comment', item).replace('{{comment_text}}', item.comment_text);
+      return _.template(templateHelper('add_comment', item), {
+        "comment_text": item.comment_text
+      });
     }
-  
+
     , 'upload': function (item) {
       return templateHelper('upload', item);
     }
@@ -62,7 +65,7 @@ module.exports = SocialBase.extend({
   , render: function (item) {
     if (item.type && this.renderMethods[item.type] && !!this.show[item.type]) {
       return this.renderMethods[item.type].apply(this, [item]);
-    } 
+    }
 
     return null;
   }

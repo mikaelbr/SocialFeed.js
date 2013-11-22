@@ -23,14 +23,13 @@ module.exports = SocialBase.extend({
   }
 
   , render: function (item) {
-    return templateHtml
-                      .replace('{{author.profileUrl}}', item.author.profileUrl)
-                      .replace('{{author.name}}', item.author.name)
-                      .replace('{{createdAt}}', item.createdAt)
-                      .replace('{{time_since}}', _.timesince(item.createdAt))
-                      .replace('{{message}}', item.message);
-                   
-    return $html;
+    return _.template(templateHtml, {
+      profile_url: item.author.profileUrl,
+      author_name: item.author.name,
+      created_at: item.createdAt,
+      time_since: _.timesince(item.createdAt),
+      message: item.message
+    });
   }
 
 });

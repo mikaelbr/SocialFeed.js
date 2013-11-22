@@ -14,12 +14,8 @@ module.exports = SocialBase.extend({
   }
 
   , render: function (item) {
-    return templateHtml
-                  .replace('{{u}}', item.u)
-                  .replace('{{d}}', item.d)
-                  .replace('{{n}}', item.n)
-                  .replace('{{dt}}', item.dt)
-                  .replace('{{time_since}}', _.timesince(item.dt));
+    item.time_since = _.timesince(item.dt);
+    return _.template(templateHtml, item)
   }
 
 });

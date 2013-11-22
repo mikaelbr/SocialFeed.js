@@ -29,12 +29,13 @@ module.exports = SocialBase.extend({
   }
 
   , render: function (item) {
-    return templateHtml
-                  .replace('{{blogname}}', this.blogname)
-                  .replace('{{blogurl}}', this.blogurl)
-                  .replace('{{url}}', item.link)
-                  .replace('{{title}}', item.title)
-                  .replace('{{dt}}', item.publishedDate)
-                  .replace('{{time_since}}', _.timesince(item.publishedDate));
+    return _.template(templateHtml, {
+        "blog_name": this.blogname
+      , "blog_url": this.blogurl
+      , "url": item.link
+      , "title": item.title
+      , "date": item.publishedDate
+      , "time_since": _.timesince(item.publishedDate)
+    });
   }
 });

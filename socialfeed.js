@@ -26,6 +26,7 @@ SocialFeed.Modules = {
   , Delicious: require('./modules/delicious')
   , RSS: require('./modules/rss')
   , Vimeo: require('./modules/vimeo')
+  , Tumblr: require('./modules/tumblr')
   , SocialBase: SocialBase
   , extend: function (module) {
     return SocialBase.extend(module);
@@ -44,7 +45,7 @@ SocialFeed.Modules = {
     this.SocialFeed = SocialFeed;
   }
 })(this);
-},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9,"./modules/rss":10,"./modules/vimeo":11}],2:[function(require,module,exports){
+},{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9,"./modules/rss":10,"./modules/vimeo":11,"./modules/tumblr":12}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
 
@@ -292,7 +293,7 @@ if (!Array.prototype.filter) {
     };
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -346,7 +347,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -532,282 +533,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":12}],4:[function(require,module,exports){
-(function(){var EventEmitter = require('events').EventEmitter
-  , _ = require('./utils')
-  ;
-
-// imports as global..
-require('./vendor/jquery-jsonp')
-
-var SocialBase = module.exports = function () {
-  this.collection = [];
-  this.init.apply(this, arguments);
-
-  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
-  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
-};
-_.inherits(SocialBase, EventEmitter);
-
-/** 
-  Extend from Backbone 
-  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
-*/
-SocialBase.extend = function (protoProps) {
-  var parent = this
-    , child = function(){ 
-        return parent.apply(this, arguments); 
-      }
-    ;
-
-  _.extend(child, parent);
-
-  var Surrogate = function () { 
-    this.constructor = child; 
-  };
-
-  Surrogate.prototype = parent.prototype;
-  child.prototype = new Surrogate;
-  if (protoProps) {
-    _.extend(child.prototype, protoProps);
-  }
-  child.__super__ = parent.prototype;
-
-  return child;
-};
-/** // From Backbone */
-
-SocialBase.fetch = function (options) {
-  var jsonp = $.jsonp;
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
-  }
-  return this.$.ajax(options);
-};
-
-var root = window;
-
-_.extend(SocialBase.prototype, {
-
-  ajaxSettings: {
-    dataType: 'jsonp',
-    type: 'GET'
-  }
-
-  , init: function (ident) { 
-    this.ident = ident;
-  }
-  
-  , fetch: function (options) {
-    options = options ? _.clone(options) : {};
-
-    var url = _.result(this, 'url')
-      , module = this
-      , success = options.success
-      ;
-
-    options.url = url;
-    options.success = function(resp) {
-      var parsed = module.parse(resp);
-
-      module.collection = parsed;
-      if (success) success(module, parsed, options);
-      module.emit('fetched', module, parsed, options);
-    };
-
-    var error = options.error;
-    options.error = function(xOptions, textStatus) {
-      if (error) error(module, textStatus, xOptions);
-      module.emit('error', module, textStatus, xOptions);
-    };
-
-    if (!url && this.data) {
-      options.success(_.result(this, 'data'));
-      return void 0;
-    }
-
-    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
-  }
-
-  , parse: function (resp) { 
-    return resp;
-  }
-
-  , orderBy: function (item) {  }
-
-  , render: function (item) {  }
-
-});
-})()
-},{"events":13,"./vendor/jquery-jsonp":14,"./utils":5}],6:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').disqus
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  init: function(ident, apikey) {
-    this.ident = ident;
-    this.apikey = apikey;
-  }
-
-  , url: function () {
-    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
-  }
-
-  , parse: function (resp) {
-    return resp.response;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.createdAt)).getTime();
-  }
-
-  , render: function (item) {
-    return _.template(templateHtml, {
-      profile_url: item.author.profileUrl,
-      author_name: item.author.name,
-      created_at: item.createdAt,
-      time_since: _.timesince(item.createdAt),
-      message: item.message
-    });
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],8:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').youtubeuploads
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  ajaxSettings: {
-    cache: true,
-    dataType: 'jsonp'
-  }
-
-  , init: function (ident, maxCount) {
-    this.ident = ident;
-    this.maxCount = maxCount || 10;
-  }
-
-  , url: function () {
-    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
-  }
-
-  , parse: function (resp) {
-    var feed = resp.feed;
-    return feed.entry || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.updated.$t)).getTime();
-  }
-
-  , hideAndMakeYoutubeClickable: function (item, html) {
-
-    var $html = $(html)
-      , $iframe = $html.find('iframe')
-      , thumbnail = item['media$group']['media$thumbnail'][0].url
-      ;
-
-    var $img = $('<img />', {
-      src: thumbnail,
-      'class': 'youtube-preview'
-    }).insertAfter($iframe).on('click', function () {
-      $iframe.insertAfter($img);
-      $img.remove();
-    });
-    $iframe.remove();
-
-    return $html;
-  }
-
-  , render: function (item) {
-
-    var html = _.template(templateHtml, {
-        profile_url: item.author[0].uri.$t
-      , username: item.author[0].name.$t
-      , video_url: item.link[0].href
-      , video_name: item.title.$t
-      , created_at: item.updated.$t
-      , time_since: _.timesince(item.updated.$t)
-      , entry_id: item.id.$t.substring(38)
-      , desc: item['media$group']['media$description'].$t
-    });
-
-    return this.hideAndMakeYoutubeClickable(item, html);
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],9:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').delicious
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-
-  url: function () {
-    return 'http://feeds.delicious.com/v2/json/' + this.ident;
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.dt)).getTime();
-  }
-
-  , render: function (item) {
-    item.time_since = _.timesince(item.dt);
-    return _.template(templateHtml, item)
-  }
-
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],10:[function(require,module,exports){
-var SocialBase = require('../basemodule')
-  , templateHtml = require('../resources').rss
-  , _ = require('../utils')
-  ;
-
-module.exports = SocialBase.extend({
-  init: function (url, count) {
-    this.feedURL = url;
-    this.count = count || 10;
-  }
-
-  , url: function () {
-    // Use Google API feed service.
-    return 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + this.count + '&q=' + encodeURIComponent(this.feedURL);
-  }
-
-  , parse: function (resp) {
-    var feed = resp.responseData.feed;
-    if (!feed) {
-      return [];
-    }
-    this.blogname = feed.title;
-    this.blogurl = feed.link;
-    return feed.entries || [];
-  }
-
-  , orderBy: function (item) {
-    return -(new Date(item.publishedDate)).getTime();
-  }
-
-  , render: function (item) {
-    return _.template(templateHtml, {
-        "blog_name": this.blogname
-      , "blog_url": this.blogurl
-      , "url": item.link
-      , "title": item.title
-      , "date": item.publishedDate
-      , "time_since": _.timesince(item.publishedDate)
-    });
-  }
-});
-},{"../basemodule":4,"../resources":15,"../utils":5}],3:[function(require,module,exports){
+},{"__browserify_process":13}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
@@ -938,11 +664,151 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":13,"./utils":5}],14:[function(require,module,exports){
-// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
-// https://github.com/jaubourg/jquery-jsonp
-(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
-},{}],7:[function(require,module,exports){
+},{"events":14,"./utils":5}],4:[function(require,module,exports){
+(function(){var EventEmitter = require('events').EventEmitter
+  , _ = require('./utils')
+  ;
+
+// imports as global..
+require('./vendor/jquery-jsonp')
+
+var SocialBase = module.exports = function () {
+  this.collection = [];
+  this.init.apply(this, arguments);
+
+  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
+  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
+};
+_.inherits(SocialBase, EventEmitter);
+
+/** 
+  Extend from Backbone 
+  (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
+*/
+SocialBase.extend = function (protoProps) {
+  var parent = this
+    , child = function(){ 
+        return parent.apply(this, arguments); 
+      }
+    ;
+
+  _.extend(child, parent);
+
+  var Surrogate = function () { 
+    this.constructor = child; 
+  };
+
+  Surrogate.prototype = parent.prototype;
+  child.prototype = new Surrogate;
+  if (protoProps) {
+    _.extend(child.prototype, protoProps);
+  }
+  child.__super__ = parent.prototype;
+
+  return child;
+};
+/** // From Backbone */
+
+SocialBase.fetch = function (options) {
+  var jsonp = $.jsonp;
+  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
+    options.callbackParameter = options.callbackParameter || "callback";
+    return jsonp(options);
+  }
+  return this.$.ajax(options);
+};
+
+var root = window;
+
+_.extend(SocialBase.prototype, {
+
+  ajaxSettings: {
+    dataType: 'jsonp',
+    type: 'GET'
+  }
+
+  , init: function (ident) { 
+    this.ident = ident;
+  }
+  
+  , fetch: function (options) {
+    options = options ? _.clone(options) : {};
+
+    var url = _.result(this, 'url')
+      , module = this
+      , success = options.success
+      ;
+
+    options.url = url;
+    options.success = function(resp) {
+      var parsed = module.parse(resp);
+
+      module.collection = parsed;
+      if (success) success(module, parsed, options);
+      module.emit('fetched', module, parsed, options);
+    };
+
+    var error = options.error;
+    options.error = function(xOptions, textStatus) {
+      if (error) error(module, textStatus, xOptions);
+      module.emit('error', module, textStatus, xOptions);
+    };
+
+    if (!url && this.data) {
+      options.success(_.result(this, 'data'));
+      return void 0;
+    }
+
+    return SocialBase.fetch(_.extend(this.ajaxSettings, options));
+  }
+
+  , parse: function (resp) { 
+    return resp;
+  }
+
+  , orderBy: function (item) {  }
+
+  , render: function (item) {  }
+
+});
+})()
+},{"events":14,"./utils":5,"./vendor/jquery-jsonp":15}],6:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').disqus
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  init: function(ident, apikey) {
+    this.ident = ident;
+    this.apikey = apikey;
+  }
+
+  , url: function () {
+    return 'https://disqus.com/api/3.0/users/listPosts.json?api_key=' + this.apikey + '&user:username=' + this.ident;
+  }
+
+  , parse: function (resp) {
+    return resp.response;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.createdAt)).getTime();
+  }
+
+  , render: function (item) {
+    return _.template(templateHtml, {
+      profile_url: item.author.profileUrl,
+      author_name: item.author.name,
+      created_at: item.createdAt,
+      time_since: _.timesince(item.createdAt),
+      message: item.message
+    });
+  }
+
+});
+},{"../basemodule":4,"../resources":16,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -1073,7 +939,138 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":15,"../utils":5}],11:[function(require,module,exports){
+},{"../basemodule":4,"../resources":16,"../utils":5}],8:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').youtubeuploads
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  ajaxSettings: {
+    cache: true,
+    dataType: 'jsonp'
+  }
+
+  , init: function (ident, maxCount) {
+    this.ident = ident;
+    this.maxCount = maxCount || 10;
+  }
+
+  , url: function () {
+    return 'http://gdata.youtube.com/feeds/users/' + this.ident + '/uploads?alt=json-in-script&format=5&max-results=' + this.maxCount;
+  }
+
+  , parse: function (resp) {
+    var feed = resp.feed;
+    return feed.entry || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.updated.$t)).getTime();
+  }
+
+  , hideAndMakeYoutubeClickable: function (item, html) {
+
+    var $html = $(html)
+      , $iframe = $html.find('iframe')
+      , thumbnail = item['media$group']['media$thumbnail'][0].url
+      ;
+
+    var $img = $('<img />', {
+      src: thumbnail,
+      'class': 'youtube-preview'
+    }).insertAfter($iframe).on('click', function () {
+      $iframe.insertAfter($img);
+      $img.remove();
+    });
+    $iframe.remove();
+
+    return $html;
+  }
+
+  , render: function (item) {
+
+    var html = _.template(templateHtml, {
+        profile_url: item.author[0].uri.$t
+      , username: item.author[0].name.$t
+      , video_url: item.link[0].href
+      , video_name: item.title.$t
+      , created_at: item.updated.$t
+      , time_since: _.timesince(item.updated.$t)
+      , entry_id: item.id.$t.substring(38)
+      , desc: item['media$group']['media$description'].$t
+    });
+
+    return this.hideAndMakeYoutubeClickable(item, html);
+  }
+
+});
+},{"../basemodule":4,"../resources":16,"../utils":5}],9:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').delicious
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+
+  url: function () {
+    return 'http://feeds.delicious.com/v2/json/' + this.ident;
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.dt)).getTime();
+  }
+
+  , render: function (item) {
+    item.time_since = _.timesince(item.dt);
+    return _.template(templateHtml, item)
+  }
+
+});
+},{"../basemodule":4,"../resources":16,"../utils":5}],10:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').rss
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+  init: function (url, count) {
+    this.feedURL = url;
+    this.count = count || 10;
+  }
+
+  , url: function () {
+    // Use Google API feed service.
+    return 'http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + this.count + '&q=' + encodeURIComponent(this.feedURL);
+  }
+
+  , parse: function (resp) {
+    var feed = resp.responseData.feed;
+    if (!feed) {
+      return [];
+    }
+    this.blogname = feed.title;
+    this.blogurl = feed.link;
+    return feed.entries || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.publishedDate)).getTime();
+  }
+
+  , render: function (item) {
+    return _.template(templateHtml, {
+        "blog_name": this.blogname
+      , "blog_url": this.blogurl
+      , "url": item.link
+      , "title": item.title
+      , "date": item.publishedDate
+      , "time_since": _.timesince(item.publishedDate)
+    });
+  }
+});
+},{"../basemodule":4,"../resources":16,"../utils":5}],11:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -1147,7 +1144,43 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":15,"../utils":5}],15:[function(require,module,exports){
+},{"../basemodule":4,"../resources":16,"../utils":5}],12:[function(require,module,exports){
+var SocialBase = require('../basemodule')
+  , templateHtml = require('../resources').tumblr
+  , _ = require('../utils')
+  ;
+
+module.exports = SocialBase.extend({
+  init: function (url, apiKey) {
+    this.blogUrl = url;
+    this.apiKey = apiKey;
+  }
+
+  , url: function () {
+    return 'http://api.tumblr.com/v2/blog/' + this.blogUrl + '/posts/text?api_key=' + this.apiKey;
+  }
+
+  , parse: function (resp) {
+    if (!resp.meta || resp.meta.status !== 200) {
+      return [];
+    }
+    return resp.response.posts || [];
+  }
+
+  , orderBy: function (item) {
+    return -(new Date(item.date)).getTime();
+  }
+
+  , render: function (item) {
+    item.time_since = _.timesince(item.date);
+    return _.template(templateHtml, item);
+  }
+});
+},{"../basemodule":4,"../utils":5,"../resources":16}],15:[function(require,module,exports){
+// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
+// https://github.com/jaubourg/jquery-jsonp
+(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
+},{}],16:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {
@@ -1161,6 +1194,7 @@ module.exports = {
 	"github_push": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-push\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2>\n      <a href=\"{profile_url}\">{username}</a>\n      pushed to <a href=\"{repo_url}\">{repo_name}</a>\n    </h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <ul class=\"socialfeed-commit-list\">\n    <li>\n      <a href=\"{commit_url}\">{commit}</a>\n      <span>{commit_message}</span>\n    </li>\n  </ul>\n</div>",
 	"github_watch": "<div class=\"socialfeed-item socialfeed-github socialfeed-github-watch\">\n  <i class=\"socialfeed-icon icon-github\"></i>\n  <header>\n    <h2><a href=\"{profile_url}\">{username}</a> starred <a href=\"{repo_url}\">{repo_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n</div>",
 	"rss": "<div class=\"socialfeed-item socialfeed-rss\">\n  <i class=\"socialfeed-icon icon-rss\"></i>\n  <header>\n    <h2>\n      New blog post at\n      <a href=\"{blogurl}\">{blogname}</a>\n    </h2>\n    <time datetime=\"{date}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <a href=\"{url}\">{title}</a>\n  </div>\n</div>",
+	"tumblr": "<div class=\"socialfeed-item socialfeed-tumblr\">\n  <i class=\"socialfeed-icon icon-tumblr\"></i>\n  <header>\n    <h2><a href=\"{post_url}\">{title}</a></h2>\n    <time datetime=\"{date}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    {body}\n\n    <p>Notes: {note_count}</p>\n  </div>\n</div>",
 	"vimeo_add_comment": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-comment\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> commented on <a href=\"{video_url}\">{video_title}</a> on Vimeo</h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    {comment_text}\n  </div>\n</div>",
 	"vimeo_like": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-like\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> liked a <a href=\"{video_url}\">video on Vimeo</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{video_url}\">{video_title}</a></h3>\n    <a href=\"{video_url}\">\n      <img src=\"{video_thumbnail_large}\" alt=\"{video_title}\">\n    </a>\n  </div>\n</div>",
 	"vimeo_upload": "<div class=\"socialfeed-item socialfeed-vimeo socialfeed-vimeo-upload\">\n  <i class=\"socialfeed-icon icon-play-sign\"></i>\n  <header>\n    <h2><a href=\"{user_url}\">{user_name}</a> uploaded a <a href=\"{video_url}\">video on Vimeo</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n\n  <div class=\"socialfeed-body\">\n    <h3><a href=\"{video_url}\">{video_title}</a></h3>\n    <a href=\"{video_url}\">\n      <img src=\"{video_thumbnail_large}\" alt=\"{video_title}\">\n    </a>\n  </div>\n</div>",

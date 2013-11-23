@@ -25,6 +25,7 @@ SocialFeed.Modules = {
   , Delicious: require('./modules/delicious')
   , RSS: require('./modules/rss')
   , Vimeo: require('./modules/vimeo')
+  , Tumblr: require('./modules/tumblr')
   , SocialBase: SocialBase
   , extend: function (module) {
     return SocialBase.extend(module);

@@ -43,13 +43,14 @@
     ;(function () {
       var sfeed1 = new SocialFeed({
                       el: $('#socialfeed')
-                    , count: 10
+                    , count: 50
                   })
                   .addModule(new SocialFeed.Modules.Disqus('mikaelbr', 'OEMdBc63xd0MZGKiVV5JgExTqdO7OSYkjgv613LJ8Py89y44pcoSKeBrelZjepVS'))
                   .addModule(new SocialFeed.Modules.Github('mikaelbr', {
                     'IssuesEvent': false
                   }))
                   .addModule(new SocialFeed.Modules.Delicious('mikaelbr'))
+                  .addModule(new SocialFeed.Modules.Tumblr('peacecorps.tumblr.com', 'VLazrfQDUhSamA0EX42IYdkec3MjDfheKKIrToxnVJOa0qii1g'))
                   .addModule(new SocialFeed.Modules.YouTubeUploads('nettutsplus'))
                   .addModule(new SocialFeed.Modules.Vimeo('mikaelbr'))
                   .start();

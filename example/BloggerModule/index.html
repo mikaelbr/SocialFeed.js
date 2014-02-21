@@ -11,12 +11,12 @@
 <body>
 
   <p>Showing the ten latest blog posts of Elijah Manors blog: <a href="http://www.elijahmanor.com/">Web Dev .NET</a></p>
-  
-  <p><a href="http://www.elijahmanor.com/">Web Dev .NET</a> uses Blogger, so this example can be used for every Blogger blog.</p>  
+
+  <p><a href="http://www.elijahmanor.com/">Web Dev .NET</a> uses Blogger, so this example can be used for every Blogger blog.</p>
 
   <ol id="socialfeed" class="socialfeed-container"></ol>
 
-  <script src="../../components/jquery/jquery.js"></script>
+  <script src="../../bower_components/jquery/jquery.js"></script>
   <script src="../../socialfeed.js"></script>
   <script>
 
@@ -53,7 +53,7 @@
 
         , render: function (item) {
           var link =  this.getLink(item.link);
-          if (!link) return null; // Do not show this post. 
+          if (!link) return null; // Do not show this post.
           return '<li><h2><a href="' + link + '">'+ item.title.$t +'</a></h2></li>';
         }
 
@@ -61,12 +61,12 @@
 
       var sfeed1 = new SocialFeed({
             el: $('#socialfeed')
-          , count: 10 // Start by showing the 10 first posts. 
+          , count: 10 // Start by showing the 10 first posts.
         })
         .addModule(new WebDevNET_Blogger())
         .start();
     })();
-    
+
 
   </script>
 </body>

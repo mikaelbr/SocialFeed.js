@@ -32,15 +32,4 @@ SocialFeed.Modules = {
   }
 };
 
-// Add SocialFeed to either the root (window, or as AMD).
-(function (root) {
-  if ( typeof define === "function" && define.amd ) {
-    define( ["jquery"], function ( $ ) {
-      SocialBase.$ = $;
-      return SocialFeed;
-    } );
-  } else {
-    // Browser globals
-    this.SocialFeed = SocialFeed;
-  }
-})(this);
+module.exports = SocialFeed;

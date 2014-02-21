@@ -36,7 +36,7 @@ target.less = function (cb) {
 
   var parser = new(less.Parser)({
       paths: ['./src']
-    , filename: 'style.less' 
+    , filename: 'style.less'
   });
 
   parser.parse(data, function (e, tree) {
@@ -77,7 +77,7 @@ function bundle(cb) {
   cb = cb || function () {};
   b = browserify();
   b.add('./src/socialfeed.js')
-  b.bundle(function (err, src) {
+  b.bundle({standalone: 'SocialFeed'}, function (err, src) {
     if (err) return console.error(err);
     src.to(buildPath);
     cb();

@@ -2,33 +2,33 @@ var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
 
-// imports as global..
-require('./vendor/jquery-jsonp')
+var root = window;
+var $;
 
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 
-  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
-  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
+  $ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
+  if (!$) throw "jQuery or Zepto is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
 
-/** 
-  Extend from Backbone 
+/**
+  Extend from Backbone
   (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
 */
 SocialBase.extend = function (protoProps) {
   var parent = this
-    , child = function(){ 
-        return parent.apply(this, arguments); 
+    , child = function(){
+        return parent.apply(this, arguments);
       }
     ;
 
   _.extend(child, parent);
 
-  var Surrogate = function () { 
-    this.constructor = child; 
+  var Surrogate = function () {
+    this.constructor = child;
   };
 
   Surrogate.prototype = parent.prototype;
@@ -43,16 +43,12 @@ SocialBase.extend = function (protoProps) {
 /** // From Backbone */
 
 SocialBase.fetch = function (options) {
-  var jsonp = $.jsonp;
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
+  if (options.dataType.toLowerCase() === 'jsonp') {
+    options.callback = options.callbackParameter || "callback";
   }
-  return this.$.ajax(options);
+
+  return $.ajax(options);
 };
-
-var root = window;
-
 _.extend(SocialBase.prototype, {
 
   ajaxSettings: {
@@ -60,10 +56,10 @@ _.extend(SocialBase.prototype, {
     type: 'GET'
   }
 
-  , init: function (ident) { 
+  , init: function (ident) {
     this.ident = ident;
   }
-  
+
   , fetch: function (options) {
     options = options ? _.clone(options) : {};
 
@@ -95,7 +91,7 @@ _.extend(SocialBase.prototype, {
     return SocialBase.fetch(_.extend(this.ajaxSettings, options));
   }
 
-  , parse: function (resp) { 
+  , parse: function (resp) {
     return resp;
   }
 

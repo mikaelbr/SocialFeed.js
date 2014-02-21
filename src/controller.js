@@ -1,11 +1,13 @@
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
+  , SocialBase = require('./basemodule')
   ;
+
+var $ = SocialBase.$ || window.jQuery || window.Zepto || window.$;
 
 var Controller = module.exports = function (options) {
   this.modules = [];
   this.feedRendered = null;
-
   this.$el = $(options.el) || $('#socialfeed');
   this.count = options.count || 1000;
   this._offset = options.offset || 0;
@@ -29,7 +31,7 @@ _.extend(Controller.prototype, {
 
     this.modules.push(module);
     module.on('fetched', _.bind(controller.moduleFetched, controller));
-    module.on('error', function () { 
+    module.on('error', function () {
       if (controller.listeners('error').length > 0) {
         controller.emit.apply(controller, ['error'].concat(arguments));
       }

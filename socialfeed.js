@@ -1,4 +1,5 @@
-;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
+(function(e){if("function"==typeof bootstrap)bootstrap("socialfeed",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeSocialFeed=e}else"undefined"!=typeof window?window.SocialFeed=e():global.SocialFeed=e()})(function(){var define,ses,bootstrap,module,exports;
+return (function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
 
 var API = require('./api')
   , Controller = require('./controller')
@@ -33,18 +34,8 @@ SocialFeed.Modules = {
   }
 };
 
-// Add SocialFeed to either the root (window, or as AMD).
-(function (root) {
-  if ( typeof define === "function" && define.amd ) {
-    define( ["jquery"], function ( $ ) {
-      SocialBase.$ = $;
-      return SocialFeed;
-    } );
-  } else {
-    // Browser globals
-    this.SocialFeed = SocialFeed;
-  }
-})(this);
+module.exports = SocialFeed;
+
 },{"./api":2,"./controller":3,"./basemodule":4,"./utils":5,"./modules/disqus":6,"./modules/github":7,"./modules/youtubeuploads":8,"./modules/delicious":9,"./modules/rss":10,"./modules/vimeo":11,"./modules/tumblr":12}],2:[function(require,module,exports){
 var API = module.exports = function (controller) {
 };
@@ -312,7 +303,8 @@ process.nextTick = (function () {
     if (canPost) {
         var queue = [];
         window.addEventListener('message', function (ev) {
-            if (ev.source === window && ev.data === 'process-tick') {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
                 ev.stopPropagation();
                 if (queue.length > 0) {
                     var fn = queue.shift();
@@ -536,12 +528,14 @@ EventEmitter.prototype.listeners = function(type) {
 },{"__browserify_process":13}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
+  , SocialBase = require('./basemodule')
   ;
+
+var $ = SocialBase.$ || window.jQuery || window.Zepto || window.$;
 
 var Controller = module.exports = function (options) {
   this.modules = [];
   this.feedRendered = null;
-
   this.$el = $(options.el) || $('#socialfeed');
   this.count = options.count || 1000;
   this._offset = options.offset || 0;
@@ -565,7 +559,7 @@ _.extend(Controller.prototype, {
 
     this.modules.push(module);
     module.on('fetched', _.bind(controller.moduleFetched, controller));
-    module.on('error', function () { 
+    module.on('error', function () {
       if (controller.listeners('error').length > 0) {
         controller.emit.apply(controller, ['error'].concat(arguments));
       }
@@ -664,38 +658,38 @@ _.extend(Controller.prototype, {
 
 
 });
-},{"events":14,"./utils":5}],4:[function(require,module,exports){
-(function(){var EventEmitter = require('events').EventEmitter
+},{"events":14,"./utils":5,"./basemodule":4}],4:[function(require,module,exports){
+var EventEmitter = require('events').EventEmitter
   , _ = require('./utils')
   ;
 
-// imports as global..
-require('./vendor/jquery-jsonp')
+var root = window;
+var $;
 
 var SocialBase = module.exports = function () {
   this.collection = [];
   this.init.apply(this, arguments);
 
-  this.$ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
-  if (!this.$) throw "jQuery or Zepto is required to use SocialFeed.";
+  $ = SocialBase.$ || root.jQuery || root.Zepto || root.$;
+  if (!$) throw "jQuery or Zepto is required to use SocialFeed.";
 };
 _.inherits(SocialBase, EventEmitter);
 
-/** 
-  Extend from Backbone 
+/**
+  Extend from Backbone
   (Copyright (c) 2010-2013 Jeremy Ashkenas, DocumentCloud)
 */
 SocialBase.extend = function (protoProps) {
   var parent = this
-    , child = function(){ 
-        return parent.apply(this, arguments); 
+    , child = function(){
+        return parent.apply(this, arguments);
       }
     ;
 
   _.extend(child, parent);
 
-  var Surrogate = function () { 
-    this.constructor = child; 
+  var Surrogate = function () {
+    this.constructor = child;
   };
 
   Surrogate.prototype = parent.prototype;
@@ -710,16 +704,12 @@ SocialBase.extend = function (protoProps) {
 /** // From Backbone */
 
 SocialBase.fetch = function (options) {
-  var jsonp = $.jsonp;
-  if (options.dataType.toLowerCase() === 'jsonp' && jsonp) {
-    options.callbackParameter = options.callbackParameter || "callback";
-    return jsonp(options);
+  if (options.dataType.toLowerCase() === 'jsonp') {
+    options.callback = options.callbackParameter || "callback";
   }
-  return this.$.ajax(options);
+
+  return $.ajax(options);
 };
-
-var root = window;
-
 _.extend(SocialBase.prototype, {
 
   ajaxSettings: {
@@ -727,10 +717,10 @@ _.extend(SocialBase.prototype, {
     type: 'GET'
   }
 
-  , init: function (ident) { 
+  , init: function (ident) {
     this.ident = ident;
   }
-  
+
   , fetch: function (options) {
     options = options ? _.clone(options) : {};
 
@@ -762,7 +752,7 @@ _.extend(SocialBase.prototype, {
     return SocialBase.fetch(_.extend(this.ajaxSettings, options));
   }
 
-  , parse: function (resp) { 
+  , parse: function (resp) {
     return resp;
   }
 
@@ -771,8 +761,7 @@ _.extend(SocialBase.prototype, {
   , render: function (item) {  }
 
 });
-})()
-},{"events":14,"./utils":5,"./vendor/jquery-jsonp":15}],6:[function(require,module,exports){
+},{"events":14,"./utils":5}],6:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').disqus
   , _ = require('../utils')
@@ -808,7 +797,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],7:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],7:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -939,7 +928,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],8:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],8:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').youtubeuploads
   , _ = require('../utils')
@@ -1006,7 +995,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],9:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],9:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').delicious
   , _ = require('../utils')
@@ -1028,7 +1017,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],10:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],10:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').rss
   , _ = require('../utils')
@@ -1070,7 +1059,7 @@ module.exports = SocialBase.extend({
     });
   }
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],11:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],11:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , resources = require('../resources')
   , _ = require('../utils')
@@ -1144,7 +1133,7 @@ module.exports = SocialBase.extend({
   }
 
 });
-},{"../basemodule":4,"../resources":16,"../utils":5}],12:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],12:[function(require,module,exports){
 var SocialBase = require('../basemodule')
   , templateHtml = require('../resources').tumblr
   , _ = require('../utils')
@@ -1176,11 +1165,7 @@ module.exports = SocialBase.extend({
     return _.template(templateHtml, item);
   }
 });
-},{"../basemodule":4,"../utils":5,"../resources":16}],15:[function(require,module,exports){
-// jquery.jsonp 2.4.0 (c)2012 Julian Aubourg | MIT License
-// https://github.com/jaubourg/jquery-jsonp
-(function(e){function t(){}function n(e){C=[e]}function r(e,t,n){return e&&e.apply&&e.apply(t.context||t,n)}function i(e){return/\?/.test(e)?"&":"?"}function O(c){function Y(e){z++||(W(),j&&(T[I]={s:[e]}),D&&(e=D.apply(c,[e])),r(O,c,[e,b,c]),r(_,c,[c,b]))}function Z(e){z++||(W(),j&&e!=w&&(T[I]=e),r(M,c,[c,e]),r(_,c,[c,e]))}c=e.extend({},k,c);var O=c.success,M=c.error,_=c.complete,D=c.dataFilter,P=c.callbackParameter,H=c.callback,B=c.cache,j=c.pageCache,F=c.charset,I=c.url,q=c.data,R=c.timeout,U,z=0,W=t,X,V,J,K,Q,G;return S&&S(function(e){e.done(O).fail(M),O=e.resolve,M=e.reject}).promise(c),c.abort=function(){!(z++)&&W()},r(c.beforeSend,c,[c])===!1||z?c:(I=I||u,q=q?typeof q=="string"?q:e.param(q,c.traditional):u,I+=q?i(I)+q:u,P&&(I+=i(I)+encodeURIComponent(P)+"=?"),!B&&!j&&(I+=i(I)+"_"+(new Date).getTime()+"="),I=I.replace(/=\?(&|$)/,"="+H+"$1"),j&&(U=T[I])?U.s?Y(U.s[0]):Z(U):(E[H]=n,K=e(y)[0],K.id=l+N++,F&&(K[o]=F),L&&L.version()<11.6?(Q=e(y)[0]).text="document.getElementById('"+K.id+"')."+p+"()":K[s]=s,A&&(K.htmlFor=K.id,K.event=h),K[d]=K[p]=K[v]=function(e){if(!K[m]||!/i/.test(K[m])){try{K[h]&&K[h]()}catch(t){}e=C,C=0,e?Y(e[0]):Z(a)}},K.src=I,W=function(e){G&&clearTimeout(G),K[v]=K[d]=K[p]=null,x[g](K),Q&&x[g](Q)},x[f](K,J=x.firstChild),Q&&x[f](Q,J),G=R>0&&setTimeout(function(){Z(w)},R)),c)}var s="async",o="charset",u="",a="error",f="insertBefore",l="_jqjsp",c="on",h=c+"click",p=c+a,d=c+"load",v=c+"readystatechange",m="readyState",g="removeChild",y="<script>",b="success",w="timeout",E=window,S=e.Deferred,x=e("head")[0]||document.documentElement,T={},N=0,C,k={callback:l,url:location.href},L=E.opera,A=!!e("<div>").html("<!--[if IE]><i><![endif]-->").find("i").length;O.setup=function(t){e.extend(k,t)},e.jsonp=O})(jQuery)
-},{}],16:[function(require,module,exports){
+},{"../basemodule":4,"../resources":15,"../utils":5}],15:[function(require,module,exports){
 /* Do not alter. Auto generated file */
 
 module.exports = {
@@ -1201,5 +1186,6 @@ module.exports = {
 	"youtubeuploads": "<div class=\"socialfeed-item socialfeed-youtube socialfeed-youtube-upload\">\n  <i class=\"socialfeed-icon icon-play-circle\"></i>\n  <header>\n    <h2><a href=\"{profile_url}\">{username}</a> added a video: <a href=\"{video_url}\">{video_name}</a></h2>\n    <time datetime=\"{created_at}\">{time_since}</time>\n  </header>\n  <div class=\"socialfeed-body\">\n    <iframe class=\"youtube-preview\"\n      src=\"http://www.youtube.com/embed/{entry_id}?wmode=transparent&amp;HD=0&amp;rel=0&amp;showinfo=0&amp;controls=1&amp;autoplay=1\"\n      frameborder=\"0\"\n      allowfullscreen>\n    </iframe>\n    <p>{desc}</p>\n  </div>\n</div>",
 
 };
-},{}]},{},[1])
+},{}]},{},[1])(1)
+});
 ;

@@ -17,7 +17,7 @@ At this moment the following features are implemented:
 
 However, extending SocialFeed.js is a simple task. See [Extending SocialFeed.js](#extending-socialfeedjs) for more information.
 
-See SocialFeed.js in use at my [personal site](http://mikaelb.net/). For a complete example two SocialFeeds, 
+See SocialFeed.js in use at my [personal site](http://git.mikaelb.net/). For a complete example two SocialFeeds, 
 Require.JS, extending modules, using with Handlebar, etc see the source code for http://mikaelb.net/ at 
 https://github.com/mikaelbr/mikaelbr.github.io.
 

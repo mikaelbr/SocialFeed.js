@@ -99,6 +99,9 @@ _.extend(Controller.prototype, {
   , _generateOrderedList: function () {
     var list = [];
     this.modules.forEach(function (module) {
+      if (!module || !module.collection) {
+        return;
+      }
       var collectionlist = module.collection.map(function (item) {
         var html = module.render(item);
         if (!html) {
